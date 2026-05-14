@@ -48,6 +48,14 @@ const supa = {
     this._token=null; this._user=null;
     localStorage.removeItem("sb_token"); localStorage.removeItem("sb_refresh");
   },
+  async resetPassword(email) {
+    const r = await fetch(`${SUPA_URL}/auth/v1/recover`, {
+      method: "POST",
+      headers: {"apikey":SUPA_KEY,"Content-Type":"application/json"},
+      body: JSON.stringify({email, redirect_to: window.location.origin + window.location.pathname}),
+    });
+    if(!r.ok){ const e=await r.json().catch(()=>{}); throw new Error(e?.message||"Erro ao enviar email"); }
+  },
   async restoreSession() {
     const token = localStorage.getItem("sb_token");
     const refresh = localStorage.getItem("sb_refresh");
@@ -234,6 +242,19 @@ const STYLES = `
   .login-box{background:${C.paper};border:1px solid ${C.tape};border-radius:2px;width:100%;max-width:400px;box-shadow:8px 8px 0 ${C.tape};overflow:hidden;}
   /* Usuários */
   .user-badge{display:inline-flex;align-items:center;gap:5px;border-radius:2px;padding:2px 8px;font-family:'Space Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.08em;}
+  /* Sidebar — escondida por padrão */
+  .side-panel{display:none;}
+  .side-nav-btn{display:flex;align-items:center;gap:10px;width:100%;padding:10px 20px;border:none;border-left:3px solid transparent;background:transparent;color:${C.faded};font-family:'Space Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .15s;text-align:left;}
+  .side-nav-btn:hover{background:${C.paperDeep};color:${C.ink};}
+  .side-nav-btn.active{color:${C.terra};background:${C.paper};border-left-color:${C.terra};}
+  .side-nav-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0;}
+
+  /* Desktop — sidebar visível */
+  @media(min-width:1024px){
+    .main-content{display:grid!important;grid-template-columns:220px 1fr;min-height:calc(100vh - 52px);}
+    .side-panel{display:flex!important;flex-direction:column;background:${C.paperDark};border-right:1px solid ${C.tape};}
+  }
+
   /* Mobile */
   @media(max-width:640px){
     .topbar-nav{display:none!important;}
@@ -309,8 +330,16 @@ function TelaLogin({onLogin}){
   const [modo,setModo]=useState("login");
   const [email,setEmail]=useState(""); const [senha,setSenha]=useState(""); const [nome,setNome]=useState("");
   const [loading,setLoading]=useState(false); const [erro,setErro]=useState("");
+  const [showSenha,setShowSenha]=useState(false);
 
   async function handleSubmit(){
+    if(modo==="recuperar"){
+      if(!email){setErro("Informe seu e-mail");return;}
+      setLoading(true); setErro("");
+      try{ await supa.resetPassword(email); setModo("recuperar_ok"); }
+      catch(e){ setErro(e.message); }
+      setLoading(false); return;
+    }
     if(!email||!senha){setErro("Preencha todos os campos");return;}
     setLoading(true); setErro("");
     try{
@@ -325,16 +354,19 @@ function TelaLogin({onLogin}){
     setLoading(false);
   }
 
-  if(modo==="confirmar") return(
+  const msgTelas={
+    confirmar:{icon:"✉",titulo:"Verifique seu e-mail",msg:`Enviamos um link de confirmação para ${email}. Confirme e volte para fazer login.`},
+    recuperar_ok:{icon:"🔑",titulo:"E-mail enviado!",msg:`Enviamos um link para redefinir sua senha para ${email}. Verifique sua caixa de entrada.`},
+  };
+
+  if(msgTelas[modo]) return(
     <div className="login-wrap">
       <div className="login-box">
         <div style={{height:4,background:`linear-gradient(90deg,${C.terra},${C.ochre})`}}/>
         <div style={{padding:"28px 24px",textAlign:"center"}}>
-          <div style={{fontSize:32,marginBottom:12}}>✉</div>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:C.ink,marginBottom:8}}>Verifique seu e-mail</div>
-          <div className="mono" style={{fontSize:10,color:C.ghost,lineHeight:1.7}}>
-            Enviamos um link de confirmação para<br/><strong style={{color:C.ink}}>{email}</strong><br/>Confirme e volte para fazer login.
-          </div>
+          <div style={{fontSize:32,marginBottom:12}}>{msgTelas[modo].icon}</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:C.ink,marginBottom:8}}>{msgTelas[modo].titulo}</div>
+          <div className="mono" style={{fontSize:10,color:C.ghost,lineHeight:1.7}}>{msgTelas[modo].msg}</div>
           <button className="btn-ghost" onClick={()=>setModo("login")} style={{marginTop:20}}>← VOLTAR AO LOGIN</button>
         </div>
       </div>
@@ -360,19 +392,41 @@ function TelaLogin({onLogin}){
               <div><label className="lbl">Nome</label><input value={nome} onChange={e=>setNome(e.target.value)} className="field" placeholder="Seu nome"/></div>
             )}
             <div><label className="lbl">E-mail</label><input type="email" value={email} onChange={e=>setEmail(e.target.value)} className="field" placeholder="seu@email.com" autoFocus/></div>
-            <div><label className="lbl">Senha</label><input type="password" value={senha} onChange={e=>setSenha(e.target.value)} className="field" placeholder="••••••••"
-              onKeyDown={e=>e.key==="Enter"&&handleSubmit()}/></div>
+            {modo!=="recuperar"&&(
+              <div>
+                <label className="lbl">Senha</label>
+                <div style={{position:"relative"}}>
+                  <input type={showSenha?"text":"password"} value={senha} onChange={e=>setSenha(e.target.value)} className="field" placeholder="••••••••"
+                    onKeyDown={e=>e.key==="Enter"&&handleSubmit()} style={{paddingRight:36}}/>
+                  <button onClick={()=>setShowSenha(v=>!v)} style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:C.ghost,fontSize:12}}>
+                    {showSenha?"🙈":"👁"}
+                  </button>
+                </div>
+              </div>
+            )}
             {erro&&<div className="mono" style={{fontSize:9,color:C.rust,padding:"6px 8px",background:"#fdf0ec",border:`1px solid ${C.rust}44`,borderRadius:2}}>{erro}</div>}
           </div>
           <button className="btn-primary" onClick={handleSubmit} disabled={loading}
             style={{width:"100%",marginTop:16,padding:"10px",fontSize:11}}>
-            {loading?"AGUARDE…":modo==="login"?"ENTRAR":"CRIAR CONTA"}
+            {loading?"AGUARDE…":modo==="login"?"ENTRAR":modo==="recuperar"?"ENVIAR LINK":"CRIAR CONTA"}
           </button>
-          <div style={{textAlign:"center",marginTop:14}}>
-            <button onClick={()=>{setModo(modo==="login"?"cadastro":"login");setErro("");}}
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,marginTop:14}}>
+            {modo==="login"&&(
+              <button onClick={()=>{setModo("recuperar");setErro("");}}
+                className="mono" style={{background:"none",border:"none",cursor:"pointer",color:C.ghost,fontSize:9,letterSpacing:".08em"}}>
+                Esqueci minha senha
+              </button>
+            )}
+            <button onClick={()=>{setModo(modo==="login"||modo==="recuperar"?"cadastro":"login");setErro("");}}
               className="mono" style={{background:"none",border:"none",cursor:"pointer",color:C.faded,fontSize:9,letterSpacing:".08em"}}>
-              {modo==="login"?"Criar nova conta →":"← Já tenho conta"}
+              {modo==="login"||modo==="recuperar"?"Criar nova conta →":"← Já tenho conta"}
             </button>
+            {modo==="recuperar"&&(
+              <button onClick={()=>{setModo("login");setErro("");}}
+                className="mono" style={{background:"none",border:"none",cursor:"pointer",color:C.ghost,fontSize:9,letterSpacing:".08em"}}>
+                ← Voltar ao login
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -1191,15 +1245,50 @@ export default function App(){
       )}
 
       <div className="main-content">
-        {tela==="dashboard"&&<Dashboard processos={processos} onAbrir={abrirProcesso} onVerTodos={()=>setTela("processos")}/>}
-        {tela==="processos"&&<ListaProcessos processos={processos} secretarias={secretarias} onAbrir={abrirProcesso} onDelete={deletarProcesso} perfil={perfil?.perfil}/>}
-        {tela==="secretarias"&&<AgendaSecretarias secretarias={secretarias} onUpdate={()=>supa.getSecretarias().then(s=>setSecretarias(s||[]))} perfil={perfil?.perfil}/>}
-        {tela==="usuarios"&&isAdmin&&<GestaoUsuarios perfis={perfis} meuPerfil={perfil} onUpdate={()=>supa.getPerfis().then(p=>setPerfis(p||[]))}/>}
-        {tela==="processo"&&aberto&&(
-          <TelaProcesso processo={aberto} secretarias={secretarias}
-            onUpdate={ch=>{ const atualizado={...aberto,...ch}; setProcessos(prev=>prev.map(p=>p.id===aberto.id?atualizado:p)); salvarProcesso(atualizado); }}
-            perfil={perfil?.perfil}/>
-        )}
+        {/* Sidebar — só visível no desktop via CSS */}
+        <div className="side-panel">
+          <div style={{padding:"12px 16px 14px",borderBottom:`1px solid ${C.tape}`,marginBottom:8}}>
+            <div className="mono" style={{fontSize:8,color:C.ghost,letterSpacing:".1em",marginBottom:3}}>USUÁRIO</div>
+            <div className="mono" style={{fontSize:11,color:C.ink,fontWeight:700,marginBottom:1}}>{perfil?.nome||user?.email?.split("@")[0]}</div>
+            <div className="mono" style={{fontSize:8,color:C.terra,letterSpacing:".1em"}}>{perfil?.perfil?.toUpperCase()}</div>
+          </div>
+          {[
+            {key:"dashboard",icon:"⊞",label:"LOG"},
+            {key:"processos",icon:"⚖",label:`ARQUIVOS (${processos.length})`},
+            {key:"secretarias",icon:"🏛",label:"SECRETARIAS"},
+            ...(isAdmin?[{key:"usuarios",icon:"👥",label:"USUÁRIOS"}]:[]),
+          ].map(n=>(
+            <button key={n.key} className={`side-nav-btn${tela===n.key||(tela==="processo"&&n.key==="processos")?" active":""}`}
+              onClick={()=>{ setTela(n.key); if(n.key!=="processos") setProcessoId(null); }}>
+              <span className="side-nav-icon">{n.icon}</span>{n.label}
+            </button>
+          ))}
+          {aberto&&(
+            <button className={`side-nav-btn${tela==="processo"?" active":""}`} onClick={()=>setTela("processo")}
+              style={{marginTop:8,borderTop:`1px dashed ${C.tape}`,paddingTop:12}}>
+              <span className="side-nav-icon">📄</span>
+              <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{aberto.nome.slice(0,18)}</span>
+            </button>
+          )}
+          <div style={{padding:"12px 14px",marginTop:"auto"}}>
+            <button onClick={handleLogout} className="mono"
+              style={{background:"none",border:`1px solid ${C.tape}`,borderRadius:2,padding:"6px 12px",fontSize:9,color:C.ghost,cursor:"pointer",width:"100%",letterSpacing:".08em"}}>
+              SAIR
+            </button>
+          </div>
+        </div>
+        {/* Conteúdo principal */}
+        <div style={{minWidth:0,overflow:"auto"}}>
+          {tela==="dashboard"&&<Dashboard processos={processos} onAbrir={abrirProcesso} onVerTodos={()=>setTela("processos")}/>}
+          {tela==="processos"&&<ListaProcessos processos={processos} secretarias={secretarias} onAbrir={abrirProcesso} onDelete={deletarProcesso} perfil={perfil?.perfil}/>}
+          {tela==="secretarias"&&<AgendaSecretarias secretarias={secretarias} onUpdate={()=>supa.getSecretarias().then(s=>setSecretarias(s||[]))} perfil={perfil?.perfil}/>}
+          {tela==="usuarios"&&isAdmin&&<GestaoUsuarios perfis={perfis} meuPerfil={perfil} onUpdate={()=>supa.getPerfis().then(p=>setPerfis(p||[]))}/>}
+          {tela==="processo"&&aberto&&(
+            <TelaProcesso processo={aberto} secretarias={secretarias}
+              onUpdate={ch=>{ const atualizado={...aberto,...ch}; setProcessos(prev=>prev.map(p=>p.id===aberto.id?atualizado:p)); salvarProcesso(atualizado); }}
+              perfil={perfil?.perfil}/>
+          )}
+        </div>
       </div>
 
       <nav className="bottom-nav">
