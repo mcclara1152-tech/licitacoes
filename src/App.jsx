@@ -281,7 +281,7 @@ const STYLES = `
 function mkId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function mkEtapas(mod){ return (ETAPAS_MOD[mod]||[]).map(n=>({id:mkId(),nome:n,status:"pendente",prazo:"",dataEntrega:"",nota:""})); }
 function mkDocs(mod){ return getFases(mod).flatMap(f=>f.docs.map(d=>({...d,uid:mkId(),faseId:f.id,status:"pendente",dataEmissao:"",dataPrazo:"",nota:"",marcacoes:[],referencias:[],dicaCustom:""}))); }
-function mkProcesso(nome,mod,num,userId){ return {id:mkId(),nome,modalidade:mod,numero:num,data_inicio:"",data_prazo:"",etapas:mkEtapas(mod),docs:mkDocs(mod),secretarias_ids:[],node_positions:{},criado_em:new Date().toISOString(),criado_por:userId}; }
+function mkProcesso(nome,mod,num,userId){ return {id:mkId(),nome,modalidade:mod,numero:num,data_inicio:"",data_prazo:"",etapas:mkEtapas(mod),docs:mkDocs(mod),secretarias_ids:[],pessoas_ids:[],node_positions:{},criado_em:new Date().toISOString(),criado_por:userId}; }
 function pct(items,key){ if(!items?.length) return 0; return Math.round(items.filter(i=>i[key]==="concluída"||i[key]==="concluído"||i[key]==="dispensado").length/items.length*100); }
 function fmtDate(s){ if(!s) return ""; try{ return new Date(s+"T12:00:00").toLocaleDateString("pt-BR"); }catch{ return s; } }
 function isConcluido(p){ return pct(p.etapas,"status")===100; }
@@ -952,21 +952,50 @@ function AbaFluxo({processo,onUpdate,readonly}){
   );
 }
 
-// ─── Aba Secretarias Processo ─────────────────────────────────────────────────
-function AbaSecProc({processo,secretarias,onUpdate,readonly}){
+// ─── Aba Órgãos Processo ─────────────────────────────────────────────────────
+function AbaOrgaosProc({processo,secretarias,onUpdate,readonly}){
   const vinc=(secretarias||[]).filter(s=>(processo.secretarias_ids||[]).includes(s.id));
   const disp=(secretarias||[]).filter(s=>!(processo.secretarias_ids||[]).includes(s.id));
   return(
     <div style={{padding:16}}>
-      <div className="mono" style={{fontSize:9,fontWeight:700,color:C.faded,letterSpacing:".1em",marginBottom:10}}>// SECRETARIAS VINCULADAS</div>
-      {vinc.length===0&&<div className="mono" style={{fontSize:9,color:C.ghost,marginBottom:12}}>// nenhuma vinculada</div>}
+      <div className="mono" style={{fontSize:9,fontWeight:700,color:C.faded,letterSpacing:".1em",marginBottom:10}}>// ÓRGÃOS VINCULADOS</div>
+      {vinc.length===0&&<div className="mono" style={{fontSize:9,color:C.ghost,marginBottom:12}}>// nenhum vinculado</div>}
       {vinc.length>0&&<div style={{display:"flex",flexDirection:"column",gap:7,marginBottom:14}}>{vinc.map(s=>(
         <div key={s.id} style={{display:"flex",alignItems:"center",gap:10,background:C.paperDark,border:`1px solid ${C.tape}`,borderRadius:2,padding:"8px 12px"}}>
-          <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:C.ink,fontFamily:"'Playfair Display',serif"}}>{s.nome}</div>{s.secretario&&<div className="mono" style={{fontSize:9,color:C.ghost}}>SEC: {s.secretario}</div>}{s.email&&<div className="mono" style={{fontSize:9,color:C.ghost}}>{s.email}</div>}</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,fontWeight:700,color:C.ink,fontFamily:"'Playfair Display',serif"}}>{s.nome}</div>
+            {s.secretario&&<div className="mono" style={{fontSize:9,color:C.ghost}}>SEC: {s.secretario}</div>}
+            {s.email&&<div className="mono" style={{fontSize:9,color:C.ghost}}>{s.email}</div>}
+            <span className="mono" style={{fontSize:8,padding:"1px 6px",borderRadius:1,background:s.possui_fundos?"#deebd8":"#f0dcd8",color:s.possui_fundos?C.sage:C.rust,border:`1px solid ${s.possui_fundos?"#7aaa6a":"#c07060"}`}}>{s.possui_fundos?"✓ FUNDOS":"✗ SEM FUNDOS"}</span>
+          </div>
           {!readonly&&<button className="del-btn" onClick={()=>onUpdate({secretarias_ids:(processo.secretarias_ids||[]).filter(x=>x!==s.id)})}>✕</button>}
         </div>
       ))}</div>}
-      {!readonly&&disp.length>0&&<><div className="mono" style={{fontSize:9,fontWeight:700,color:C.faded,letterSpacing:".1em",marginBottom:8}}>// VINCULAR</div><div style={{display:"flex",flexWrap:"wrap",gap:6}}>{disp.map(s=><button key={s.id} onClick={()=>onUpdate({secretarias_ids:[...(processo.secretarias_ids||[]),s.id]})} className="btn-ghost" style={{fontSize:9}}>＋ {s.nome}</button>)}</div></>}
+      {!readonly&&disp.length>0&&<><div className="mono" style={{fontSize:9,fontWeight:700,color:C.faded,letterSpacing:".1em",marginBottom:8}}>// VINCULAR ÓRGÃO</div><div style={{display:"flex",flexWrap:"wrap",gap:6}}>{disp.map(s=><button key={s.id} onClick={()=>onUpdate({secretarias_ids:[...(processo.secretarias_ids||[]),s.id]})} className="btn-ghost" style={{fontSize:9}}>＋ {s.nome}</button>)}</div></>}
+    </div>
+  );
+}
+
+// ─── Aba Pessoas Processo ─────────────────────────────────────────────────────
+function AbaPessoasProc({processo,pessoas,onUpdate,readonly}){
+  const vinc=(pessoas||[]).filter(p=>(processo.pessoas_ids||[]).includes(p.id));
+  const disp=(pessoas||[]).filter(p=>!(processo.pessoas_ids||[]).includes(p.id));
+  return(
+    <div style={{padding:16}}>
+      <div className="mono" style={{fontSize:9,fontWeight:700,color:C.faded,letterSpacing:".1em",marginBottom:10}}>// PESSOAS VINCULADAS</div>
+      {vinc.length===0&&<div className="mono" style={{fontSize:9,color:C.ghost,marginBottom:12}}>// nenhuma vinculada</div>}
+      {vinc.length>0&&<div style={{display:"flex",flexDirection:"column",gap:7,marginBottom:14}}>{vinc.map(p=>(
+        <div key={p.id} style={{display:"flex",alignItems:"center",gap:10,background:C.paperDark,border:`1px solid ${C.tape}`,borderRadius:2,padding:"8px 12px"}}>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,fontWeight:700,color:C.ink,fontFamily:"'Playfair Display',serif"}}>{p.nome}</div>
+            {p.cargo&&<div className="mono" style={{fontSize:9,color:C.terra,fontWeight:700}}>{p.cargo.toUpperCase()}</div>}
+            {p.orgao&&<div className="mono" style={{fontSize:9,color:C.ghost}}>🏛 {p.orgao}</div>}
+            {p.email&&<div className="mono" style={{fontSize:9,color:C.ghost}}>{p.email}</div>}
+          </div>
+          {!readonly&&<button className="del-btn" onClick={()=>onUpdate({pessoas_ids:(processo.pessoas_ids||[]).filter(x=>x!==p.id)})}>✕</button>}
+        </div>
+      ))}</div>}
+      {!readonly&&disp.length>0&&<><div className="mono" style={{fontSize:9,fontWeight:700,color:C.faded,letterSpacing:".1em",marginBottom:8}}>// VINCULAR PESSOA</div><div style={{display:"flex",flexWrap:"wrap",gap:6}}>{disp.map(p=><button key={p.id} onClick={()=>onUpdate({pessoas_ids:[...(processo.pessoas_ids||[]),p.id]})} className="btn-ghost" style={{fontSize:9}}>＋ {p.nome}{p.cargo?` (${p.cargo})`:""}</button>)}</div></>}
     </div>
   );
 }
@@ -1006,7 +1035,7 @@ function TelaProcesso({processo,secretarias,onUpdate,perfil}){
         </div>
       </div>
       <div className="tab-row" style={{maxWidth:920,margin:"0 auto",width:"100%"}}>
-        {[["etapas","01 // ETAPAS"],["documentos","02 // DOCUMENTOS"],["fluxo","03 // FLUXO"],["secretarias","04 // SECRETARIAS"]].map(([k,l])=>(
+        {[["etapas","01 // ETAPAS"],["documentos","02 // DOCUMENTOS"],["fluxo","03 // FLUXO"],["orgaos","04 // ÓRGÃOS"],["pessoas","05 // PESSOAS"]].map(([k,l])=>(
           <button key={k} className={`tab-item${aba===k?" active":""}`} onClick={()=>setAba(k)}>{l}</button>
         ))}
       </div>
@@ -1014,7 +1043,8 @@ function TelaProcesso({processo,secretarias,onUpdate,perfil}){
         {aba==="etapas"&&<AbaEtapas processo={processo} onUpdate={onUpdate} readonly={readonly}/>}
         {aba==="documentos"&&<AbaDocumentos processo={processo} onUpdate={onUpdate} readonly={readonly}/>}
         {aba==="fluxo"&&<AbaFluxo processo={processo} onUpdate={onUpdate} readonly={readonly}/>}
-        {aba==="secretarias"&&<AbaSecProc processo={processo} secretarias={secretarias} onUpdate={onUpdate} readonly={readonly}/>}
+        {aba==="orgaos"&&<AbaOrgaosProc processo={processo} secretarias={secretarias} onUpdate={onUpdate} readonly={readonly}/>}
+        {aba==="pessoas"&&<AbaPessoasProc processo={processo} pessoas={secretarias.filter(s=>s.tipo==="pessoa")} onUpdate={onUpdate} readonly={readonly}/>}
       </div>
       {showEdit&&!readonly&&<ModalProcesso processo={processo} onSave={onUpdate} onClose={()=>setShowEdit(false)}/>}
     </div>
@@ -1114,6 +1144,57 @@ function ListaProcessos({processos,secretarias,onAbrir,onDelete,perfil}){
   );
 }
 
+// ─── Agenda Pessoas ───────────────────────────────────────────────────────────
+function AgendaPessoas({pessoas,onUpdate,perfil}){
+  const [showForm,setShowForm]=useState(false); const [editId,setEditId]=useState(null);
+  const blank={nome:"",cargo:"",orgao:"",email:"",telefone:"",obs:""};
+  const [form,setForm]=useState(blank);
+  const readonly=perfil==="visualizador";
+  async function salvar(){ if(!form.nome.trim()) return; const p={...form,id:editId||mkId()}; await supa.upsertSecretaria({...p,tipo:"pessoa"}); onUpdate(); setForm(blank);setShowForm(false);setEditId(null); }
+  function editar(p){ setForm({nome:p.nome,cargo:p.cargo||"",orgao:p.orgao||"",email:p.email||"",telefone:p.telefone||"",obs:p.obs||""}); setEditId(p.id); setShowForm(true); }
+  async function excluir(id){ if(!confirm("Excluir esta pessoa?")) return; await supa.deleteSecretaria(id); onUpdate(); }
+  const fS={width:"100%",border:`1px solid ${C.tape}`,borderRadius:2,padding:"7px 10px",fontSize:12,background:C.paper,outline:"none"}; const lS={display:"block",fontFamily:"'Space Mono',monospace",fontSize:9,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",color:C.faded,marginBottom:4};
+  return(
+    <div style={{maxWidth:860,margin:"0 auto",padding:"20px 16px 56px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+        <div className="mono" style={{fontSize:9,color:C.ghost,letterSpacing:".12em"}}>PESSOAS // {pessoas.length}</div>
+        {!readonly&&<button className="btn-primary" onClick={()=>{setForm(blank);setEditId(null);setShowForm(true);}}>+ NOVA</button>}
+      </div>
+      {showForm&&!readonly&&(
+        <div className="fade-up" style={{background:C.paperDark,border:`1px solid ${C.tape}`,borderTop:`3px solid ${C.terra}`,borderRadius:2,padding:18,marginBottom:18,boxShadow:`3px 3px 0 ${C.tape}`}}>
+          <div className="mono" style={{fontSize:9,fontWeight:700,color:C.faded,letterSpacing:".1em",marginBottom:14}}>{editId?"EDITAR":"NOVA PESSOA"}</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+            <div><label style={lS}>NOME *</label><input value={form.nome} onChange={e=>setForm(p=>({...p,nome:e.target.value}))} style={fS} autoFocus/></div>
+            <div><label style={lS}>CARGO</label><input value={form.cargo} onChange={e=>setForm(p=>({...p,cargo:e.target.value}))} style={fS} placeholder="Ex: Prefeito, Agente de Contratação"/></div>
+            <div><label style={lS}>ÓRGÃO</label><input value={form.orgao} onChange={e=>setForm(p=>({...p,orgao:e.target.value}))} style={fS} placeholder="Ex: Prefeitura, SEPLAGE"/></div>
+            <div><label style={lS}>E-MAIL</label><input type="email" value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))} style={fS}/></div>
+            <div><label style={lS}>TELEFONE</label><input value={form.telefone} onChange={e=>setForm(p=>({...p,telefone:e.target.value}))} style={fS}/></div>
+            <div style={{gridColumn:"1/-1"}}><label style={lS}>OBSERVAÇÕES</label><textarea value={form.obs} onChange={e=>setForm(p=>({...p,obs:e.target.value}))} style={{...fS,resize:"vertical"}} rows={2}/></div>
+          </div>
+          <div style={{display:"flex",gap:7,justifyContent:"flex-end"}}><button className="btn-ghost" onClick={()=>{setShowForm(false);setEditId(null);}}>CANCELAR</button><button className="btn-primary" onClick={salvar}>{editId?"SALVAR":"CADASTRAR"}</button></div>
+        </div>
+      )}
+      {pessoas.length===0&&!showForm?<div style={{textAlign:"center",padding:"50px 20px",color:C.ghost}}><div className="mono" style={{fontSize:9,letterSpacing:".1em"}}>// NENHUMA PESSOA CADASTRADA</div></div>:(
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:12}}>
+          {pessoas.map(p=>(
+            <div key={p.id} style={{background:C.paperDark,border:`1px solid ${C.tape}`,borderTop:`3px solid ${C.ochre}`,borderRadius:2,boxShadow:`2px 2px 0 ${C.tape}`}}>
+              <div style={{padding:"12px 14px"}}>
+                <div style={{fontSize:13,fontWeight:700,color:C.ink,fontFamily:"'Playfair Display',serif",lineHeight:1.3,marginBottom:4}}>{p.nome}</div>
+                {p.cargo&&<div className="mono" style={{fontSize:9,color:C.terra,fontWeight:700,marginBottom:4}}>{p.cargo.toUpperCase()}</div>}
+                {p.orgao&&<div className="mono" style={{fontSize:9,color:C.ghost,marginBottom:2}}>🏛 {p.orgao}</div>}
+                {p.email&&<div className="mono" style={{fontSize:9,color:C.ghost,marginBottom:2}}>✉ {p.email}</div>}
+                {p.telefone&&<div className="mono" style={{fontSize:9,color:C.ghost,marginBottom:2}}>📞 {p.telefone}</div>}
+                {p.obs&&<div style={{fontSize:10,color:C.faded,fontStyle:"italic",marginTop:5,padding:"4px 7px",background:C.paper,borderLeft:`2px solid ${C.tape}`,fontFamily:"'Lora',serif"}}>{p.obs}</div>}
+                {!readonly&&<div style={{display:"flex",gap:6,marginTop:9,justifyContent:"flex-end"}}><button className="btn-ghost btn-sm" onClick={()=>editar(p)}>EDITAR</button><button className="del-btn" onClick={()=>excluir(p.id)}>✕</button></div>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Agenda Secretarias ───────────────────────────────────────────────────────
 function AgendaSecretarias({secretarias,onUpdate,perfil}){
   const [showForm,setShowForm]=useState(false); const [editId,setEditId]=useState(null);
@@ -1174,6 +1255,7 @@ export default function App(){
   const [perfis,setPerfis]=useState([]);
   const [processos,setProcessos]=useState([]);
   const [secretarias,setSecretarias]=useState([]);
+  const [pessoas,setPessoas]=useState([]);
   const [loading,setLoading]=useState(true);
   const [tela,setTela]=useState("dashboard");
   const [processoId,setProcessoId]=useState(null);
@@ -1202,7 +1284,7 @@ export default function App(){
   async function carregarDados(u){
     try{
       const [p,s,pf,pfs]=await Promise.all([supa.getProcessos(),supa.getSecretarias(),supa.getPerfil(u.id),supa.getPerfis()]);
-      setProcessos(p||[]); setSecretarias(s||[]); setPerfil(pf); setPerfis(pfs||[]);
+      setProcessos(p||[]); setSecretarias((s||[]).filter(x=>x.tipo!=="pessoa")); setPessoas((s||[]).filter(x=>x.tipo==="pessoa")); setPerfil(pf); setPerfis(pfs||[]);
     }catch(e){ showToast("⚠ Erro ao carregar: "+e.message); }
   }
 
@@ -1241,8 +1323,8 @@ export default function App(){
   const aberto=processoId?processos.find(p=>p.id===processoId):null;
   const podeEditar=perfil?.perfil==="admin"||perfil?.perfil==="editor";
   const isAdmin=perfil?.perfil==="admin";
-  const NAV=[{key:"dashboard",label:"LOG"},{key:"processos",label:`ARQUIVOS (${processos.length})`},{key:"secretarias",label:"SECRETARIAS"},...(isAdmin?[{key:"usuarios",label:"USUÁRIOS"}]:[])];
-  const BNAV=[{key:"dashboard",icon:"⊞",label:"LOG"},{key:"processos",icon:"⚖",label:"ARQUIVOS"},{key:"secretarias",icon:"🏛",label:"SEC"},...(isAdmin?[{key:"usuarios",icon:"👥",label:"USUÁRIOS"}]:[])];
+  const NAV=[{key:"dashboard",label:"LOG"},{key:"processos",label:`ARQUIVOS (${processos.length})`},{key:"secretarias",label:"ÓRGÃOS"},{key:"pessoas",label:"PESSOAS"},...(isAdmin?[{key:"usuarios",label:"USUÁRIOS"}]:[])];
+  const BNAV=[{key:"dashboard",icon:"⊞",label:"LOG"},{key:"processos",icon:"⚖",label:"ARQUIVOS"},{key:"secretarias",icon:"🏛",label:"ÓRGÃOS"},{key:"pessoas",icon:"👤",label:"PESSOAS"},...(isAdmin?[{key:"usuarios",icon:"👥",label:"USUÁRIOS"}]:[])];
 
   return(
     <div className="shell">
@@ -1294,7 +1376,8 @@ export default function App(){
           {[
             {key:"dashboard",icon:"⊞",label:"LOG"},
             {key:"processos",icon:"⚖",label:`ARQUIVOS (${processos.length})`},
-            {key:"secretarias",icon:"🏛",label:"SECRETARIAS"},
+            {key:"secretarias",icon:"🏛",label:"ÓRGÃOS"},
+            {key:"pessoas",icon:"👤",label:"PESSOAS"},
             ...(isAdmin?[{key:"usuarios",icon:"👥",label:"USUÁRIOS"}]:[]),
           ].map(n=>(
             <button key={n.key} className={`side-nav-btn${tela===n.key||(tela==="processo"&&n.key==="processos")?" active":""}`}
@@ -1320,7 +1403,8 @@ export default function App(){
         <div style={{minWidth:0,overflow:"auto"}}>
           {tela==="dashboard"&&<Dashboard processos={processos} onAbrir={abrirProcesso} onVerTodos={()=>setTela("processos")}/>}
           {tela==="processos"&&<ListaProcessos processos={processos} secretarias={secretarias} onAbrir={abrirProcesso} onDelete={deletarProcesso} perfil={perfil?.perfil}/>}
-          {tela==="secretarias"&&<AgendaSecretarias secretarias={secretarias} onUpdate={()=>supa.getSecretarias().then(s=>setSecretarias(s||[]))} perfil={perfil?.perfil}/>}
+          {tela==="secretarias"&&<AgendaSecretarias secretarias={secretarias} onUpdate={()=>supa.getSecretarias().then(s=>{setSecretarias((s||[]).filter(x=>x.tipo!=="pessoa"));setPessoas((s||[]).filter(x=>x.tipo==="pessoa"));})} perfil={perfil?.perfil}/>}
+          {tela==="pessoas"&&<AgendaPessoas pessoas={pessoas} onUpdate={()=>supa.getSecretarias().then(s=>{setSecretarias((s||[]).filter(x=>x.tipo!=="pessoa"));setPessoas((s||[]).filter(x=>x.tipo==="pessoa"));})} perfil={perfil?.perfil}/>}
           {tela==="usuarios"&&isAdmin&&<GestaoUsuarios perfis={perfis} meuPerfil={perfil} onUpdate={()=>supa.getPerfis().then(p=>setPerfis(p||[]))}/>}
           {tela==="processo"&&aberto&&(
             <TelaProcesso processo={aberto} secretarias={secretarias}
