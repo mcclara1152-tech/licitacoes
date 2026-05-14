@@ -499,7 +499,7 @@ function FolderCard({processo,onAbrir,onDelete,idx,perfil}){
         <span className="mono" style={{fontSize:9,letterSpacing:".12em"}}>CODE_{mc.code}</span>
         <span style={{opacity:.7,fontSize:9}}>//</span>
         <span className="mono" style={{fontSize:9,letterSpacing:".06em",maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-          {processo.numeroLicitacao||processo.numero||(processo.objeto||processo.nome).toUpperCase().slice(0,20)}
+          {processo.numero_licitacao||processo.numero||(processo.objeto||processo.nome).toUpperCase().slice(0,20)}
         </span>
       </div>
       <div style={{padding:"14px 16px"}}>
@@ -521,7 +521,7 @@ function FolderCard({processo,onAbrir,onDelete,idx,perfil}){
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,fontWeight:700,color:C.ink,lineHeight:1.3,marginBottom:5}}>{processo.objeto||processo.nome}</div>
             <div style={{display:"flex",gap:7,flexWrap:"wrap",alignItems:"center",marginBottom:4}}>
               <span className="mono" style={{fontSize:9,color:mc.color}}>{processo.modalidade.toUpperCase()}</span>
-              {processo.numeroLicitacao&&<span className="mono" style={{fontSize:9,color:C.ink,fontWeight:700}}>Nº {processo.numeroLicitacao}</span>}
+              {processo.numero_licitacao&&<span className="mono" style={{fontSize:9,color:C.ink,fontWeight:700}}>Nº {processo.numero_licitacao}</span>}
               {processo.numero&&<span className="mono" style={{fontSize:9,color:C.ghost}}>PA: {processo.numero}</span>}
             </div>
             <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:3}}>
@@ -583,7 +583,7 @@ function ModalProcesso({processo,onSave,onClose,userId}){
   const [objeto,setObjeto]=useState(processo?.objeto||"");
   const [mod,setMod]=useState(processo?.modalidade||MODALIDADES[0]);
   const [numProc,setNumProc]=useState(processo?.numero||"");
-  const [numLic,setNumLic]=useState(processo?.numeroLicitacao||"");
+  const [numLic,setNumLic]=useState(processo?.numero_licitacao||"");
 
   function salvar(){
     if(!objeto.trim()) return;
@@ -594,7 +594,7 @@ function ModalProcesso({processo,onSave,onClose,userId}){
       objeto:objeto.trim(),
       modalidade:mod,
       numero:numProc.trim(),
-      numeroLicitacao:numLic.trim(),
+      numero_licitacao:numLic.trim(),
       ...(!editando?{id:mkId(),etapas:mkEtapas(mod),docs:mkDocs(mod),secretarias_ids:[],node_positions:{},criado_em:new Date().toISOString(),criado_por:userId}:{}),
       ...(mudou?{etapas:mkEtapas(mod),docs:mkDocs(mod),node_positions:{}}:{})
     });
