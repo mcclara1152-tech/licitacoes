@@ -1042,7 +1042,7 @@ function Dashboard({processos,onAbrir,onVerTodos}){
         <div><div className="mono" style={{fontSize:9,color:C.ghost,letterSpacing:".12em",marginBottom:4}}>ARCHIVE LOG // {new Date().toLocaleDateString("pt-BR")} // LEI 14.133</div><div style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700,color:C.ink}}>Processos Licitatórios</div></div>
         {processos.length>0&&<button className="btn-ghost" onClick={()=>gerarPDF(processos)} style={{fontSize:9}}>⬇ EXPORTAR PDF</button>}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:1,marginBottom:28,border:`1px solid ${C.tape}`,borderRadius:2,overflow:"hidden"}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:1,marginBottom:28,border:`1px solid ${C.tape}`,borderRadius:2,overflow:"hidden"}}>
         {[{label:"TOTAL",v:total,cor:C.ink,dark:true},{label:"EM CURSO",v:emAnd,cor:C.ochre},{label:"CONCLUÍDOS",v:conc,cor:C.sage},{label:"PENDENTES",v:pend,cor:C.ghost}].map((m,i)=>(
           <div key={m.label} style={{background:m.dark?C.inkLight:C.paperDark,padding:"14px 16px",borderRight:i<3?`1px solid ${C.tape}`:"none"}}>
             <div className="mono" style={{fontSize:8,color:m.dark?C.ghost:C.ghost,letterSpacing:".1em",marginBottom:3}}>{m.label}</div>
@@ -1264,11 +1264,11 @@ export default function App(){
           <button className="btn-icon" onClick={()=>setShowBusca(true)} title="Ctrl+K">⌕</button>
           {salvando&&<span className="mono" style={{fontSize:8,color:C.ghost,padding:"0 6px"}}>SALVANDO…</span>}
           <button className="btn-icon" onClick={handleLogout} title="Sair" style={{fontSize:10,color:"rgba(240,232,213,.3)"}}>SAIR</button>
-          {podeEditar&&<button className="btn-primary" onClick={()=>setShowModal(true)} style={{fontSize:9,padding:"6px 12px"}}>+ NOVO</button>}
+          {podeEditar&&<button className="btn-primary" onClick={()=>setShowModal(true)} style={{fontSize:11,padding:"8px 18px",letterSpacing:".12em"}}>+ NOVO</button>}
         </div>
         <div className="topbar-mobile-right">
           <button className="btn-icon" onClick={()=>setShowBusca(true)}>⌕</button>
-          {podeEditar&&<button className="btn-primary" onClick={()=>setShowModal(true)} style={{fontSize:9,padding:"6px 12px"}}>+ NOVO</button>}
+          {podeEditar&&<button className="btn-primary" onClick={()=>setShowModal(true)} style={{fontSize:11,padding:"8px 18px",letterSpacing:".12em"}}>+ NOVO</button>}
           <button className="btn-icon" onClick={()=>setShowActions(v=>!v)}>⋯</button>
         </div>
       </div>
