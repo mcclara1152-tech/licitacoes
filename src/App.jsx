@@ -498,7 +498,9 @@ function FolderCard({processo,onAbrir,onDelete,idx,perfil}){
       <div className="folder-tab" style={{background:mc.color,borderColor:mc.color,color:C.paper}}>
         <span className="mono" style={{fontSize:9,letterSpacing:".12em"}}>CODE_{mc.code}</span>
         <span style={{opacity:.7,fontSize:9}}>//</span>
-        <span className="mono" style={{fontSize:9,letterSpacing:".06em",maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{processo.nome.toUpperCase().slice(0,24)}</span>
+        <span className="mono" style={{fontSize:9,letterSpacing:".06em",maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+          {processo.numeroLicitacao||processo.numero||(processo.objeto||processo.nome).toUpperCase().slice(0,20)}
+        </span>
       </div>
       <div style={{padding:"14px 16px"}}>
         <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
@@ -516,10 +518,11 @@ function FolderCard({processo,onAbrir,onDelete,idx,perfil}){
             </div>
           </div>
           <div style={{flex:1,minWidth:0}}>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,fontWeight:700,color:C.ink,lineHeight:1.3,marginBottom:5}}>{processo.nome}</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,fontWeight:700,color:C.ink,lineHeight:1.3,marginBottom:5}}>{processo.objeto||processo.nome}</div>
             <div style={{display:"flex",gap:7,flexWrap:"wrap",alignItems:"center",marginBottom:4}}>
               <span className="mono" style={{fontSize:9,color:mc.color}}>{processo.modalidade.toUpperCase()}</span>
-              {processo.numero&&<span className="mono" style={{fontSize:9,color:C.ghost}}>Nº {processo.numero}</span>}
+              {processo.numeroLicitacao&&<span className="mono" style={{fontSize:9,color:C.ink,fontWeight:700}}>Nº {processo.numeroLicitacao}</span>}
+              {processo.numero&&<span className="mono" style={{fontSize:9,color:C.ghost}}>PA: {processo.numero}</span>}
             </div>
             <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:3}}>
               {processo.data_inicio&&<span className="mono" style={{fontSize:9,color:C.faded}}>INI: {fmtDate(processo.data_inicio)}</span>}
@@ -577,8 +580,27 @@ function BuscaGlobal({processos,onSelect,onClose}){
 // ─── Modais de processo ───────────────────────────────────────────────────────
 function ModalProcesso({processo,onSave,onClose,userId}){
   const editando=!!processo;
-  const [nome,setNome]=useState(processo?.nome||""); const [mod,setMod]=useState(processo?.modalidade||MODALIDADES[0]); const [num,setNum]=useState(processo?.numero||"");
-  function salvar(){ if(!nome.trim()) return; const mudou=editando&&mod!==processo.modalidade; onSave({...(editando?processo:{}),nome:nome.trim(),modalidade:mod,numero:num.trim(),...(!editando?{id:mkId(),etapas:mkEtapas(mod),docs:mkDocs(mod),secretarias_ids:[],node_positions:{},criado_em:new Date().toISOString(),criado_por:userId}:{}),...(mudou?{etapas:mkEtapas(mod),docs:mkDocs(mod),node_positions:{}}:{})}); onClose(); }
+  const [objeto,setObjeto]=useState(processo?.objeto||"");
+  const [mod,setMod]=useState(processo?.modalidade||MODALIDADES[0]);
+  const [numProc,setNumProc]=useState(processo?.numero||"");
+  const [numLic,setNumLic]=useState(processo?.numeroLicitacao||"");
+
+  function salvar(){
+    if(!objeto.trim()) return;
+    const mudou=editando&&mod!==processo.modalidade;
+    onSave({
+      ...(editando?processo:{}),
+      nome:objeto.trim(),
+      objeto:objeto.trim(),
+      modalidade:mod,
+      numero:numProc.trim(),
+      numeroLicitacao:numLic.trim(),
+      ...(!editando?{id:mkId(),etapas:mkEtapas(mod),docs:mkDocs(mod),secretarias_ids:[],node_positions:{},criado_em:new Date().toISOString(),criado_por:userId}:{}),
+      ...(mudou?{etapas:mkEtapas(mod),docs:mkDocs(mod),node_positions:{}}:{})
+    });
+    onClose();
+  }
+
   return(
     <div className="modal-overlay">
       <div className="modal-box fade-up">
@@ -587,11 +609,28 @@ function ModalProcesso({processo,onSave,onClose,userId}){
           <button onClick={onClose} className="del-btn">✕</button>
         </div>
         <div style={{padding:"16px 20px",display:"flex",flexDirection:"column",gap:14}}>
-          <div><label className="lbl">Nome *</label><input value={nome} onChange={e=>setNome(e.target.value)} className="field" autoFocus/></div>
-          <div><label className="lbl">Modalidade *</label><select value={mod} onChange={e=>setMod(e.target.value)} className="field">{MODALIDADES.map(m=><option key={m}>{m}</option>)}</select>
+          <div>
+            <label className="lbl">Objeto *</label>
+            <input value={objeto} onChange={e=>setObjeto(e.target.value)} className="field" autoFocus
+              placeholder="Ex: Contratação de empresa para pavimentação da Rua X"/>
+          </div>
+          <div>
+            <label className="lbl">Modalidade *</label>
+            <select value={mod} onChange={e=>setMod(e.target.value)} className="field">
+              {MODALIDADES.map(m=><option key={m}>{m}</option>)}
+            </select>
             {editando&&mod!==processo.modalidade&&<div className="mono" style={{fontSize:9,color:C.rust,marginTop:4}}>⚠ Mudar modalidade recria etapas e documentos</div>}
           </div>
-          <div><label className="lbl">Nº do Processo</label><input value={num} onChange={e=>setNum(e.target.value)} className="field" placeholder="Ex: 001/2025"/></div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            <div>
+              <label className="lbl">Nº Processo Administrativo</label>
+              <input value={numProc} onChange={e=>setNumProc(e.target.value)} className="field" placeholder="Ex: 2208001/2025/SEPLAGE"/>
+            </div>
+            <div>
+              <label className="lbl">Nº da Licitação</label>
+              <input value={numLic} onChange={e=>setNumLic(e.target.value)} className="field" placeholder="Ex: 007/2026"/>
+            </div>
+          </div>
           <div style={{display:"flex",gap:8,justifyContent:"flex-end",paddingTop:6,borderTop:`1px solid ${C.tape}`}}>
             <button className="btn-ghost" onClick={onClose}>CANCELAR</button>
             <button className="btn-primary" onClick={salvar}>{editando?"SALVAR":"CRIAR ARQUIVO"}</button>
@@ -952,7 +991,7 @@ function TelaProcesso({processo,secretarias,onUpdate,perfil}){
           </div>
           <div style={{display:"flex",gap:14,alignItems:"flex-start"}}>
             <div style={{flex:1,minWidth:0}}>
-              <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700,color:C.ink,lineHeight:1.2,marginBottom:8}}>{processo.nome}</h2>
+              <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:18,fontWeight:700,color:C.ink,lineHeight:1.2,marginBottom:8}}>{processo.objeto||processo.nome}</h2>
               <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center",marginBottom:8}}>
                 <DateField label="INÍCIO" value={processo.data_inicio} onChange={v=>onUpdate({data_inicio:v})} readonly={readonly}/>
                 <DateField label="PRAZO" value={processo.data_prazo} onChange={v=>onUpdate({data_prazo:v})} readonly={readonly}/>
