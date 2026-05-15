@@ -151,27 +151,98 @@ function getFases(mod){ return FASES[mod]||[]; }
 const STATUS_DOC={pendente:{label:"PENDENTE",dot:C.ghost,bg:"#ede4d0",border:C.tape},"em elaboração":{label:"ELABORANDO",dot:C.ochre,bg:"#f5ead0",border:C.ochreLight},aguardando:{label:"AGUARDANDO",dot:C.violet,bg:"#ece8f5",border:"#9a7acf"},concluído:{label:"CONCLUÍDO",dot:C.sage,bg:"#deebd8",border:"#7aaa6a"},dispensado:{label:"DISPENSADO",dot:C.ghost,bg:"#e8e4dc",border:C.ghost}};
 const STATUS_ETAPA={pendente:{label:"PENDENTE",dot:C.ghost,bg:"#ede4d0",border:C.tape},"em andamento":{label:"EM CURSO",dot:C.ochre,bg:"#f5ead0",border:C.ochreLight},concluída:{label:"CONCLUÍDA",dot:C.sage,bg:"#deebd8",border:"#7aaa6a"},bloqueada:{label:"BLOQUEADA",dot:C.rust,bg:"#f0dcd8",border:"#c07060"}};
 
+const DICAS_ETAPAS={
+  // Concorrência
+  "Estudo Técnico Preliminar (ETP)": "Documento obrigatório pelo art. 18 da Lei 14.133/2021. Deve demonstrar a necessidade da contratação, as alternativas consideradas e a justificativa da solução escolhida. Atenção ao item 5 do ETP: verifique se há preferência por produto nacional — se houver margem de preferência de 10%, existe um textinho pronto que pode ser usado. Elaborado pela Engenharia em conjunto com o Planejamento.",
+  "Termo de Referência / Projeto Básico": "O TR é usado em contratações de serviços; o Projeto Básico, em obras. Deve conter: objeto detalhado, prazo de execução, critérios de medição e pagamento, obrigações das partes e critérios de qualificação técnica.",
+  "Pesquisa de Preços": "Levantamento de preços de mercado para estimar o valor da contratação. Use preferencialmente o SINAPI para obras e o COMPRASNET para serviços. Documente todas as fontes consultadas.",
+  "Elaboração do Edital": "Esta é a versão final do edital — após o parecer jurídico, incorpore todas as correções apontadas pela Procuradoria e finalize o documento. Esta versão é a que será publicada e vincula juridicamente o processo. Certifique-se de que as alterações da minuta foram devidamente aplicadas antes de seguir para assinatura.",
+  "Publicação do Edital": "Sempre marcar a sessão de abertura às 9h. Para calcular a data da sessão: o prazo mínimo é de 25 dias úteis contados a partir do dia SEGUINTE à publicação (não conta o dia da publicação). Publicar no PNCP (obrigatório), DOE e, se o valor exigir, em jornal de grande circulação. Imprimir o despacho das publicações em duas vias — uma no processo, outra fica com o Setor de Publicação. Assinado pela secretária da SUPRI.",
+  "Prazo de Impugnações": "Período em que os interessados podem questionar o edital. Dura até 3 dias úteis antes da sessão. Responda todas as impugnações por escrito e publique as respostas.",
+  "Sessão Pública de Abertura": "Conduzida pelo Agente de Contratação. Abertura dos envelopes de proposta, verificação de conformidade e início do julgamento. Lavrar ata detalhada de tudo que ocorreu.",
+  "Habilitação": "Verificação da regularidade do vencedor em quatro frentes: (1) JURÍDICA — contrato social, CNPJ, procuração se houver; (2) FISCAL — Certidão Negativa Municipal, Estadual, Federal/Dívida Ativa, FGTS e CNDT (trabalhista); (3) TÉCNICA — acervo técnico compatível com o objeto; (4) ECONÔMICO-FINANCEIRA — balanço patrimonial. Todos os documentos devem estar previstos no edital e dentro do prazo de validade na data da sessão.",
+  "Julgamento das Propostas": "Análise das propostas conforme o critério definido no edital (menor preço, melhor técnica etc.). A Engenharia emite parecer técnico verificando se a proposta está de acordo com o edital — especialmente se o valor proposto é compatível com o orçamento estimado. Dica: compare com a tabela QCI e veja se o valor bate com o do ETP.",
+  "Recursos": "Prazo de 3 dias úteis após cada decisão para interposição de recurso. O Agente deve notificar os demais licitantes para contrarrazões. Resposta motivada obrigatória.",
+  "Homologação": "Ato do Ordenador de Despesas que confirma a regularidade do processo e o resultado do julgamento. Atenção ao critério de julgamento: obras com apenas um objeto costumam ser homologadas por valor global; quando há mais de uma obra ou lote, a homologação é por lote. Importante: nos processos que geram Ata de Registro de Preços, o órgão que abriu o processo passa a ser o Gerenciador da ata; nos que não geram ata, permanece como Demandante. Publicar no PNCP em até 3 dias úteis.: obras com apenas um objeto costumam ser homologadas por valor global; quando há mais de uma obra ou lote, a homologação é por lote. Publicar no PNCP em até 3 dias úteis.",
+  "Assinatura do Contrato": "Convocar o vencedor para assinar dentro do prazo previsto no edital (geralmente 5 dias úteis). Exigir a garantia contratual antes da assinatura (geralmente 5% do valor).",
+  "Publicação do Contrato": "Publicar no PNCP em até 20 dias úteis após a assinatura. Publicar também no GEO-Obras se for obra de engenharia e extrato no Diário Oficial.",
+  "Execução / Fiscalização": "O Fiscal de Contrato designado deve acompanhar a execução, registrar ocorrências, atestar medições e comunicar irregularidades ao gestor. Manter diário de obra atualizado.",
+  "Encerramento": "Após a conclusão do objeto, emitir o Termo de Recebimento Definitivo, publicar o encerramento no PNCP e arquivar o processo completo.",
+  // Dispensa
+  "Capa": "A capa identifica o processo administrativo. Deve conter: número do processo (ex: 2208001/2025/SEPLAGE), objeto resumido, modalidade (Dispensa de Licitação), data de abertura e a secretaria solicitante.",
+  "Solicitação": "Documento assinado pelo responsável da secretaria solicitante descrevendo: o que está sendo solicitado, a quantidade, a justificativa da necessidade e o valor estimado. É a origem formal do processo.",
+  "Autorização": "Despacho do ordenador de despesas autorizando a abertura do processo e a realização da despesa. Sem essa autorização, o processo não pode prosseguir.",
+  "Dotação Orçamentária": "A Dotação define de onde vai sair o dinheiro — é a confirmação de que há verba disponível no orçamento para cobrir essa despesa. Quando receber o despacho de resposta da Contabilidade, copie o texto exato da dotação informada — esse texto será reproduzido em vários documentos ao longo do processo. Sem dotação confirmada, o processo não pode prosseguir.",
+  "Justificativa da Contratação": "Documento que demonstra que o caso se enquadra em uma das hipóteses do art. 75 da Lei 14.133/2021. Seja específico: cite o inciso aplicável e explique por que a licitação não é viável ou necessária.",
+  "Justificativa de Preço": "Comprova que o valor a ser pago é compatível com o mercado. Use no mínimo 3 orçamentos de fornecedores diferentes, ou tabelas de referência oficiais (SINAPI, CMED, SEINFRA etc.).",
+  "Documentos do Fornecedor": "Habilitação jurídica e regularidade fiscal do fornecedor: CNPJ, contrato social, certidões negativas de débito (federal, estadual, municipal, FGTS, trabalhista). Todas devem estar válidas na data.",
+  "Parecer Jurídico": "Análise da Procuradoria sobre a legalidade do processo. Verifica o enquadramento legal, a regularidade dos documentos e a compatibilidade com a Lei 14.133/2021. É obrigatório antes da ratificação.",
+  "Ratificação": "Ato do ordenador de despesas que autoriza formalmente a contratação direta após o parecer jurídico favorável. Somente após a ratificação o processo pode ser publicado e o contrato assinado.",
+  "Publicação no PNCP": "A publicação no Portal Nacional de Contratações Públicas é obrigatória pela Lei 14.133/2021, mesmo nas dispensas. Deve ocorrer antes da assinatura do contrato.",
+  "Contrato / Empenho": "Formalização da contratação. Para valores menores, pode ser substituído por nota de empenho. Para contratos, exigir assinatura do representante legal do fornecedor e do ordenador.",
+  // Inexigibilidade
+  "Justificativa de Inexigibilidade": "CONCEITO: Na Inexigibilidade, a licitação não é dispensada — ela é impossível, porque não existe competição viável. O art. 74 da Lei 14.133/2021 prevê os casos: fornecedor exclusivo (inciso I), serviços técnicos especializados de natureza predominantemente intelectual (inciso III) e profissional do setor artístico consagrado (inciso II). Este documento deve provar com fatos concretos que a competição é inviável.", — seja por exclusividade do fornecedor (art. 74, I) ou notória especialização (art. 74, III). Cite o inciso específico e fundamente com fatos concretos.",
+  "Comprovação de Notória Especialização": "Para contratações por notória especialização: junte currículo completo, obras ou serviços realizados, prêmios, publicações, certificados e reconhecimento formal do meio técnico. Quanto mais robusto, melhor.",
+  // Pregão
+  "Sessão Pública — Lances": "Sessão eletrônica (via COMPRASNET ou plataforma similar) ou presencial de lances. O Pregoeiro conduz a disputa, negocia com o menor lance e verifica a exequibilidade da proposta.",
+  "Negociação": "Após os lances, o Pregoeiro negocia diretamente com o primeiro colocado para tentar reduzir ainda mais o valor. Registrar toda a negociação na ata.",
+  "Ata da Sessão": "Documento que registra todos os atos da sessão pública: propostas, lances, negociação, resultado e recursos. Deve ser assinada pelo Pregoeiro e pela equipe de apoio.",
+};
+
 const DICAS_PADRAO={
-  "d1":"O órgão solicitante é quem assina o DFD. Identifique a secretaria que demanda a obra ou serviço e use o nome completo e o responsável.",
-  "d2":"Inclua todos os projetos exigidos: arquitetônico, estrutural, elétrico, hidrossanitário etc.",
-  "d3":"Use preferencialmente o SINAPI. Inclua composições de custo unitário e memória de cálculo.",
-  "d8":"O ETP deve demonstrar a necessidade da contratação, alternativas e justificativa da solução. Base: art. 18 da Lei 14.133.",
-  "d9":"O TR deve conter objeto, prazo, obrigações das partes, critérios de medição e pagamento.",
-  "d10":"O número do processo é gerado aqui — anote-o, pois será usado em todos os documentos seguintes.",
-  "d11":"O despacho solicita à contabilidade que certifique a disponibilidade orçamentária.",
-  "d14":"A autorização do ordenador é obrigatória antes de qualquer publicação.",
-  "d17":"Se houver ressalvas, a minuta deve ser corrigida antes de prosseguir.",
-  "d22":"A portaria deve ser publicada no Diário Oficial antes da abertura. Inclua o certificado do agente.",
-  "d23":"Três assinaturas obrigatórias: agente, planejamento e ordenador.",
-  "d25":"Publicação obrigatória no PNCP, Diário Oficial e, dependendo do valor, jornal de grande circulação.",
-  "d42":"A adjudicação atribui o objeto ao vencedor. A homologação encerra o processo licitatório.",
-  "d43":"Publicação no PNCP obrigatória em até 3 dias úteis após a homologação.",
-  "d50":"Publicação no PNCP obrigatória em até 20 dias úteis da assinatura.",
-  "dd1":"Inclua: número do processo, objeto resumido, modalidade (Dispensa), data de abertura e secretaria solicitante.",
-  "dd5":"A justificativa deve demonstrar que o caso se enquadra em uma das hipóteses do art. 75 da Lei 14.133.",
-  "dd6":"Use três orçamentos ou tabelas de referência (SINAPI, SEINFRA etc.).",
-  "di5":"Demonstre a inviabilidade de competição — exclusividade do fornecedor ou notória especialização (art. 74, Lei 14.133).",
-  "di6":"Junte currículo, certificados, obras realizadas e reconhecimento do meio técnico.",
+  "d1":"O órgão solicitante é quem assina o DFD. Identifique a secretaria que demanda a obra ou serviço — use o nome completo da secretaria e o nome do responsável que vai assinar. Ex: 'Secretaria Municipal de Infraestrutura — Fulano de Tal'.",
+  "d2":"Inclua TODOS os projetos exigidos para o tipo de obra: arquitetônico, estrutural, elétrico, hidrossanitário, de fundações, etc. Verifique as resoluções do CONFEA/CAU para a lista completa. Todos devem estar assinados pelo responsável técnico com ART/RRT recolhida.",
+  "d3":"Use o SINAPI (Sistema Nacional de Pesquisa de Custos e Índices da Construção Civil) como referência principal. A planilha deve ter: código do item, descrição, unidade, quantidade, preço unitário e total. Inclua a data de referência da tabela utilizada.",
+  "d8":"O ETP (Estudo Técnico Preliminar) é obrigatório pelo art. 18 da Lei 14.133/2021. Deve conter: descrição da necessidade, estimativa da quantidade, levantamento de mercado, descrição da solução escolhida e justificativa. Elaborado pela Engenharia com apoio do Planejamento.",
+  "d9":"O Termo de Referência substitui o Projeto Básico em contratações de serviços. Deve conter: objeto detalhado, prazo de execução, local de entrega/execução, obrigações do contratado e do contratante, critérios de medição, forma e prazo de pagamento, e critérios de qualificação técnica exigidos.",
+  "d10":"A autuação formaliza a abertura do processo. O número do processo é obtido na pasta de Administração Interna, na tabela de Controle de Processos. Como ler o número (ex: 2208001/2025/SEPLAGE): '22' = dia 22 (dia de início), '08' = agosto (mês), '001' = primeiro processo da fila, '2025' = ano, 'SEPLAGE' = origem. A DATA do Termo de Autuação é a data que consta nessa tabela — não a data de hoje.",
+  "d12":"A Resposta da Dotação é emitida pela Contabilidade confirmando: (1) que há saldo disponível, (2) qual é a rubrica orçamentária (o 'endereço' do recurso no orçamento — ex: Função/Subfunção/Programa/Ação/Elemento de Despesa) e (3) o valor disponível. Guarde este documento — o número da dotação será usado em todos os documentos financeiros do processo.",
+  "d11":"O despacho para dotação solicita à Contabilidade que informe de onde vai sair o dinheiro — qual rubrica orçamentária tem saldo disponível. Quando receber a resposta, copie o texto exato da dotação informada — esse texto será usado em vários documentos ao longo do processo, como o edital e o contrato.",
+  "d15":"A Minuta é o rascunho do edital — é aqui que começa a construção do documento mais importante do processo. Antes de começar, consulte três fontes essenciais: (1) a tabela QCI — veja se os valores batem com o ETP; (2) o ETP — especialmente o item 5, para verificar preferência de produto nacional; (3) o item 8 do TR — costuma ter informações cruciais sobre obrigações e critérios. Na minuta, os pontos mais comuns de ajuste são: dotação orçamentária, vigência do contrato e as 3 primeiras páginas. Após pronta, a minuta segue para o Jurídico.",
+  "d14":"A autorização do Ordenador de Despesas é obrigatória antes de qualquer ato do processo. O Ordenador é geralmente o Prefeito ou o Secretário competente. Sem essa assinatura, nenhuma publicação ou contratação tem validade jurídica.",
+  "d17":"O Parecer Jurídico da Procuradoria analisa a legalidade do processo. Atenção: note sempre quem é o Procurador que assinou — essa informação pode ser relevante para recursos e questionamentos futuros. Se houver ressalvas, o processo deve ser corrigido antes de prosseguir. Guardar o parecer original no processo.",
+  "d22":"A Portaria de designação do Agente de Contratação deve ser publicada no Diário Oficial ANTES da abertura da sessão. Junto à portaria, anexar o certificado de conclusão do curso de Agente de Contratação (exigido pelo art. 7º da Lei 14.133/2021).",
+  "d23":"O edital final deve ser assinado por três partes: (1) Agente de Contratação, (2) Responsável pelo Planejamento e (3) Ordenador de Despesas. Todas as páginas devem ser rubricadas. Este é o documento que será publicado e vincula juridicamente o processo.",
+  "d25":"FLUXO DE PUBLICAÇÃO: após o edital assinado, ele segue para a pasta de Publicação junto com os Avisos de Licitação. Publicações obrigatórias: (1) PNCP — Portal Nacional de Contratações Públicas; (2) DOE — Diário Oficial do Estado; (3) Jornal de grande circulação se o valor exigir. Depois de publicado no DOE: imprimir o Despacho das Publicações em DUAS VIAS — uma fica no processo e a outra fica com o Setor de Publicação. O despacho é assinado pela secretária da SUPRI. Lembre: despachos internos = DESPACHO; para outras secretarias ou Prefeito = OFÍCIO.", — Portal Nacional de Contratações Públicas (prazo: mesmo dia da publicação no diário); (2) Diário Oficial do Estado ou Município; (3) Jornal de grande circulação (se o valor superar os limites do § 1º do art. 54 da Lei 14.133); (4) GEO-Obras e portal da prefeitura. Guardar comprovantes de todas as publicações no processo.",
+  "d42":"Adjudicação: ato do Agente de Contratação que atribui o objeto ao vencedor após o julgamento definitivo. Homologação: ato posterior do Ordenador de Despesas que confirma a regularidade de todo o processo e autoriza a contratação. Ambos devem ser registrados no sistema e no processo físico.",
+  "d43":"A publicação da homologação no PNCP é obrigatória e deve ocorrer em até 3 dias úteis após o ato de homologação. Também publicar no Diário Oficial e no portal da prefeitura.",
+  "d50":"A publicação do contrato é obrigatória no PNCP em até 20 dias úteis da assinatura. Além disso: publicar extrato no Diário Oficial, registrar no GEO-Obras (se obra de engenharia) e incluir no ASPEC. Guardar comprovantes de todas as publicações.",
+  "dd1":"A capa identifica e organiza o processo. Deve conter: Número do Processo Administrativo (ex: 2208001/2025/SEPLAGE), Objeto resumido, Modalidade (Dispensa de Licitação — art. 75, inciso X), Secretaria/Órgão solicitante, Data de abertura e Ordenador de Despesas responsável.",
+  "dd5":"CONCEITO: A Dispensa de Licitação (art. 75 da Lei 14.133/2021) é uma contratação direta — como o nome diz, a licitação é DISPENSADA. Isso pode ocorrer por duas razões principais: (1) VALOR: quando o valor é baixo demais para justificar o processo licitatório (até R$ 50.000 para obras e serviços de engenharia, até R$ 50.000 para outros serviços e compras); (2) EMERGÊNCIA: situações de calamidade, emergência ou urgência que não permitam aguardar o prazo de uma licitação. A Justificativa deve demonstrar claramente em qual hipótese do art. 75 o caso se enquadra, citando o inciso específico.", Cite o inciso específico (ex: inciso II — valor até R$ 50.000 para outros serviços). Explique a necessidade, quando surgiu, por que é urgente e por que a licitação não é adequada.",
+  "dd6":"A Justificativa de Preço comprova que o valor é compatível com o mercado. Formas aceitas: (1) mínimo 3 orçamentos de fornecedores distintos; (2) tabelas de referência oficiais (SINAPI, CMED, SEINFRA); (3) contratações similares recentes de outros órgãos. Documente a metodologia de pesquisa e calcule a média ou mediana dos preços.",
+  "di5":"CONCEITO: A Inexigibilidade (art. 74 da Lei 14.133/2021) é usada quando a competição é INVIÁVEL — não existe outra empresa ou profissional capaz de fazer aquilo, seja por exclusividade de fornecimento ou por notória especialização. Diferente da Dispensa (onde poderia haver competição, mas ela é dispensada por razões práticas), na Inex ela simplesmente não é possível. A Justificativa deve provar essa inviabilidade com fatos concretos. Para notória especialização: demonstre que o profissional/empresa tem reconhecimento excepcional — produção intelectual, prêmios, obras de referência, depoimentos do setor.", Para exclusividade (art. 74, I): junte declaração do fabricante ou distribuidor exclusivo. Para notória especialização (art. 74, III): demonstre que o profissional/empresa tem reconhecimento excepcional no ramo, com produção intelectual, prêmios, obras de referência e depoimentos do setor.",
+  "d29": "O despacho encaminha a proposta do vencedor para a Engenharia analisar. Informe o prazo para resposta e destaque os pontos que precisam de verificação técnica.",
+  "d30": "O Parecer Técnico da Proposta é a análise da Engenharia verificando se a proposta está de acordo com o edital — especialmente se o valor proposto é compatível com o orçamento estimado. Dica importante: compare o valor proposto com a tabela QCI e veja se ele bate com o valor do ETP. Qualquer inconsistência deve ser apontada.",
+  "d33": "Encaminha a documentação de habilitação do vencedor para a Engenharia verificar a qualificação técnica — se a empresa tem capacidade técnica e acervo de obras similares conforme exigido no edital.",
+  "d34": "Análise da Engenharia sobre os documentos de habilitação técnica do vencedor: verifica se o acervo técnico apresentado é compatível com as exigências do edital.",
+  "di1":"DICA PRÁTICA: A capa identifica o processo. Sempre analise os incisos da capa — eles indicam o fundamento legal da contratação e precisam estar corretos desde o início. Na Inexigibilidade, o inciso mais comum é o III do art. 74 (notória especialização). O número do processo administrativo é obtido na pasta de Administração Interna, dentro da tabela de Controle de Processos.",
+  "dd1_num":"COMO LER O NÚMERO DO PROCESSO: os dois primeiros dígitos = dia do mês em que foi iniciado; terceiro e quarto dígitos = mês; os três últimos antes da / = ordem na fila de processos. Depois vem o ano e depois a origem (SUPRI, SEPLAGE etc.). Ex: 2208001/2025/SEPLAGE = processo iniciado no dia 22, mês 08, primeiro da fila, ano 2025, originado na SEPLAGE.",
+  "autuacao_data":"A data do Termo de Autuação é a data que consta na tabela do processo administrativo — ou seja, a data em que o processo foi iniciado/registrado no sistema. Não use a data do dia em que você está preenchendo o documento.",
+  "orgao_demandante":"DEMANDANTE x SOLICITANTE: o órgão demandante é quem pede a verba (quem tem a necessidade); o solicitante é quem tem a verba disponível (quem vai pagar). Atenção: há órgãos como a SECULT que não têm fundo próprio e precisam solicitar à Prefeitura — nesses casos, a Prefeitura aparece como solicitante mesmo que a demanda seja da SECULT.",
+  "num_modalidade":"O número da licitação (ex: 001/2026 para Inexigibilidade ou Concorrência) é obtido na tabela de modalidades, na pasta de Administração Interna.",
+
+  "di_fluxo_completo":"FLUXO COMPLETO DA INEXIGIBILIDADE (ordem dos documentos): 1. Capa (com incisos corretos); 2. Termo de Abertura assinado pela administradora; 3. DFD enviado pelo demandante; 4. Termo de Autuação assinado pela administradora (data = data da tabela); 5. Despacho para Dotação (memorando ao setor de Contabilidade da Prefeitura, assinado pela secretaria da SUPRI); 6. Resposta da Dotação (recebida por e-mail — atenção ao texto específico de cada dotação); 7. Declaração de Adequação Orçamentária assinada pelo Prefeito (usa o mesmo texto que veio na dotação); 8. Autorização de Autuação de Processo assinada pelo Prefeito; 9. Termo de Referência (assinado pelo Planejamento e analisado pelo setor de Obras); 10. Termo de Autuação do Processo por Agente; 11. Convocação da empresa para apresentar documentação; 12. Documentação da empresa; 13. Minuta do Contrato (não precisa de assinatura nesta fase); 14. Despacho para o Jurídico (memorando assinado pelo Agente); 15. Parecer Jurídico (atentar para quem é o Procurador que assinou); 16. Despacho ao Controle Interno (memorando assinado pelo Agente); 17. Parecer do Controle Interno.",
+
+  "di2":"DICA PRÁTICA: O solicitante geralmente é quem assinou o DFD. O DFD (Documento de Formalização de Demanda) é enviado pelo órgão demandante — guarde-o pois é um dos primeiros documentos da pasta. Lembre: demandante é quem tem a necessidade, solicitante é quem tem a verba.",
+  "dotacao_texto":"ATENÇÃO: cada dotação tem um texto específico que vem no documento enviado pela Contabilidade. Copie esse texto exatamente como está — ele será reproduzido na Declaração de Adequação Orçamentária (que vai ao Prefeito) e em outros documentos. Qualquer erro nesse texto pode invalidar o processo.",
+
+  "certidoes":"CERTIDÕES FISCAIS — o que a empresa precisa apresentar para habilitação fiscal: (1) Certidão Negativa Municipal (ou positiva com efeito de negativa); (2) Certidão Negativa Estadual; (3) Certidão Negativa Federal (Receita Federal + Dívida Ativa da União — hoje são emitidas juntas); (4) Certidão de Regularidade do FGTS (emitida pela Caixa Econômica); (5) Certidão Negativa de Débitos Trabalhistas — CNDT (emitida pelo TST). Todas devem estar dentro do prazo de validade na data da sessão.",
+
+  "publicacao_edital":"FLUXO DE PUBLICAÇÃO EM CONCORRÊNCIAS: após o despacho ao jurídico e o parecer favorável, a minuta do edital se torna o edital definitivo. Sempre colocar o horário da sessão às 9h. Para calcular a data da sessão: conte 10 dias úteis a partir do dia SEGUINTE à publicação (não conta o dia da publicação). O edital segue para a pasta de Publicação junto com os avisos de licitação.",
+
+  "publicacao_doe":"Após a publicação no DOE (Diário Oficial do Estado), imprime o despacho das publicações em DUAS VIAS — uma fica no processo e a outra fica com o Setor de Publicação. O despacho é assinado pela secretária da SUPRI.",
+
+  "oficio_x_despacho":"DESPACHO x OFÍCIO: quando o documento é interno (de um setor para outro dentro da mesma secretaria), usa-se DESPACHO. Quando é direcionado a outra secretaria, ao Prefeito ou a qualquer entidade externa à SUPRI, o documento é nomeado como OFÍCIO. Fique atento a isso — usar o termo errado é uma falha formal que pode ser apontada pelo Jurídico ou Controle Interno.",
+
+  "di_fluxo_parte2":"CONTINUAÇÃO DO FLUXO DA INEXIGIBILIDADE (após Controle Interno): 18. Declaração de Dispensa — documento que será publicado; 19. Despacho para publicação no Diário Oficial (assinado conforme padrão); 20. Termo de Ratificação — assinado pelo Prefeito (enviado por e-mail após assinatura); 21. Pedido de Fiscal de Contrato — ofício ao órgão responsável solicitando a indicação de um fiscal. Use como modelo o da Concorrência 001/2026. Este ofício também deve ser salvo na pasta de Ofícios dentro da pasta de Administração Interna; 22. Acesso ao site do TCM — verificar quais documentos são necessários para o inciso específico do processo, montar a pasta completa; 23. Validação pelo Prefeito — docs que precisam ser validados são enviados ao Prefeito com despacho; 24. Despacho para o TCM — encaminhamento formal da documentação ao Tribunal de Contas.",
+
+  "pedido_fiscal":"O Pedido de Fiscal é um ofício enviado ao órgão responsável pela execução do contrato solicitando a indicação de um servidor para ser o Fiscal de Contrato. Use como base o modelo que está na pasta da Concorrência 001/2026. Após assinar, salve uma cópia também na pasta de Ofícios dentro da pasta de Administração Interna.",
+
+  "tcm":"Para saber quais documentos enviar ao TCM (Tribunal de Contas dos Municípios), acesse o site do TCM e consulte a lista específica para o inciso do seu processo — cada inciso pode ter exigências diferentes. Monte a pasta completa, faça validar pelo Prefeito e depois encaminhe com despacho formal ao TCM.",
+
+  "ratificacao":"O Termo de Ratificação é assinado pelo Prefeito e formaliza a autorização da contratação direta. Após assinado, é enviado por e-mail. A Ratificação também precisa ser publicada no Diário Oficial — verifique o prazo de publicação exigido para o inciso específico.",
+
+  "di6":"Para comprovar Notória Especialização, o dossiê deve ser robusto: currículo completo, lista de obras/serviços similares realizados com comprovantes, publicações técnicas ou acadêmicas, prêmios e reconhecimentos, certificados de especialização, e preferencialmente declarações de outros órgãos públicos que já contrataram o profissional/empresa.",
 };
 
 const STYLES = `
@@ -494,7 +565,9 @@ function FolderCard({processo,onAbrir,onDelete,idx,perfil}){
   const concluido=isConcluido(processo); const emAnd=isEmAndamento(processo);
   const podeExcluir=perfil==="admin";
   return(
-    <div className="folder fade-up" style={{marginTop:24,animationDelay:`${idx*.05}s`}}>
+    const diasPrazo=processo.data_prazo&&!isConcluido(processo)?Math.ceil((new Date(processo.data_prazo+"T12:00:00")-new Date())/(1000*60*60*24)):null;
+    const corPrazo=diasPrazo!==null?(diasPrazo<0?C.rust:diasPrazo<=7?C.ochre:diasPrazo<=15?"#c8a030":null):null;
+    <div className="folder fade-up" style={{marginTop:24,animationDelay:`${idx*.05}s`,...(corPrazo?{borderColor:corPrazo,borderWidth:2}:{})}}>
       <div className="folder-tab" style={{background:mc.color,borderColor:mc.color,color:C.paper}}>
         <span className="mono" style={{fontSize:9,letterSpacing:".12em"}}>CODE_{mc.code}</span>
         <span style={{opacity:.7,fontSize:9}}>//</span>
@@ -529,6 +602,13 @@ function FolderCard({processo,onAbrir,onDelete,idx,perfil}){
               {processo.data_prazo&&<span className="mono" style={{fontSize:9,color:C.ochre}}>PRAZO: {fmtDate(processo.data_prazo)}</span>}
             </div>
             {atual&&!concluido&&<div style={{fontSize:11,color:C.faded,fontStyle:"italic"}}>→ {atual.nome}</div>}
+            {corPrazo&&(
+              <div className="mono" style={{fontSize:8,marginTop:4,color:corPrazo,fontWeight:700}}>
+                {diasPrazo<0?`⚠ PRAZO VENCIDO HÁ ${Math.abs(diasPrazo)} DIA${Math.abs(diasPrazo)!==1?"S":""}`:
+                 diasPrazo===0?"⚠ PRAZO VENCE HOJE":
+                 `⚠ PRAZO EM ${diasPrazo} DIA${diasPrazo!==1?"S":""}`}
+              </div>
+            )}
           </div>
           <div style={{display:"flex",flexDirection:"column",gap:6,alignItems:"flex-end",flexShrink:0}}>
             <button className="btn-primary" onClick={()=>onAbrir(processo.id)} style={{fontSize:9,padding:"6px 12px"}}>ABRIR →</button>
@@ -671,7 +751,25 @@ function AbaEtapas({processo,onUpdate,readonly}){
               {!isLast&&<div style={{width:1,flex:1,background:C.paperDeep,marginTop:3}}/>}
             </div>
             <div>
-              <div style={{fontSize:12,fontWeight:600,color:done?C.ghost:C.ink,textDecoration:done?"line-through":"none",marginBottom:4,fontFamily:"'Lora',serif"}}>{e.nome}</div>
+              <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:4,flexWrap:"wrap"}}>
+                {editNomeId===e.id&&!readonly?(
+                  <input value={nomeTemp} onChange={ev=>setNomeTemp(ev.target.value)} autoFocus
+                    onBlur={()=>{up(e.id,{nome:nomeTemp.trim()||e.nome});setEditNomeId(null);}}
+                    onKeyDown={ev=>{if(ev.key==="Enter"){up(e.id,{nome:nomeTemp.trim()||e.nome});setEditNomeId(null);}if(ev.key==="Escape")setEditNomeId(null);}}
+                    style={{fontSize:12,fontWeight:600,border:`1px solid ${C.terra}`,borderRadius:2,padding:"2px 6px",flex:1,fontFamily:"'Lora',serif"}}/>
+                ):(
+                  <span style={{fontSize:12,fontWeight:600,color:done?C.ghost:C.ink,textDecoration:done?"line-through":"none",fontFamily:"'Lora',serif",cursor:readonly?"default":"text"}}
+                    onClick={()=>{if(!readonly){setEditNomeId(e.id);setNomeTemp(e.nome);}}}>
+                    {e.nome}
+                  </span>
+                )}
+                {DICAS_ETAPAS[e.nome]&&(
+                  <button onClick={()=>setDicaEtapa(e)}
+                    style={{background:"#f5ead0",border:`1px solid ${C.ochreLight}`,borderRadius:"50%",width:16,height:16,
+                      fontSize:9,cursor:"pointer",color:C.ochre,fontFamily:"'Space Mono',monospace",
+                      fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>?</button>
+                )}
+              </div>
               <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",marginBottom:3}}>
                 <DateField label="PRAZO" value={e.prazo} onChange={v=>up(e.id,{prazo:v})} readonly={readonly}/>
                 <DateField label="ENTREGUE" value={e.dataEntrega} onChange={v=>up(e.id,{dataEntrega:v})} readonly={readonly}/>
@@ -697,6 +795,7 @@ function AbaEtapas({processo,onUpdate,readonly}){
           </div>
         );
       })}
+      {dicaEtapa&&<PopoverDicaEtapa etapa={dicaEtapa} onClose={()=>setDicaEtapa(null)}/>}
       {!readonly&&(
         <div style={{padding:"10px 14px",borderTop:`1px dashed ${C.tape}`,background:C.paperDark}}>
           {showAdd?(
@@ -710,6 +809,48 @@ function AbaEtapas({processo,onUpdate,readonly}){
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Busca de dicas ──────────────────────────────────────────────────────────
+function BuscaDicas({onClose}){
+  const [q,setQ]=useState(""); const inputRef=useRef();
+  useEffect(()=>inputRef.current?.focus(),[]);
+  const todasDicas=[
+    ...Object.entries(DICAS_PADRAO).map(([id,texto])=>({id,texto,tipo:"DOCUMENTO"})),
+    ...Object.entries(DICAS_ETAPAS).map(([nome,texto])=>({id:nome,texto,tipo:"ETAPA"})),
+  ];
+  const resultados=q.trim().length<2?[]:todasDicas.filter(d=>
+    d.texto.toLowerCase().includes(q.toLowerCase())||
+    d.id.toLowerCase().includes(q.toLowerCase())
+  ).slice(0,8);
+  return(
+    <div className="search-overlay" onClick={onClose}>
+      <div className="search-box fade-up" onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex",alignItems:"center",borderBottom:`1px solid ${C.tape}`}}>
+          <span className="mono" style={{padding:"0 14px",color:C.ghost,fontSize:11}}>💡 DICAS //</span>
+          <input ref={inputRef} className="search-input" value={q} onChange={e=>setQ(e.target.value)}
+            placeholder="buscar nas dicas… (ex: dotação, certidão, prazo)"
+            onKeyDown={e=>e.key==="Escape"&&onClose()}/>
+          <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:C.ghost,padding:"14px",fontFamily:"'Space Mono',monospace"}}>✕</button>
+        </div>
+        {q.length>=2&&(resultados.length===0
+          ?<div className="mono" style={{padding:"20px",textAlign:"center",color:C.ghost,fontSize:10}}>// NENHUMA DICA ENCONTRADA</div>
+          :<div style={{maxHeight:420,overflowY:"auto"}}>
+            {resultados.map((r,i)=>(
+              <div key={i} style={{padding:"12px 18px",borderBottom:`1px solid ${C.paperDark}`}}>
+                <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:6}}>
+                  <span className="mono" style={{fontSize:8,color:C.ghost,background:C.paperDark,padding:"1px 6px",borderRadius:2}}>{r.tipo}</span>
+                  <span className="mono" style={{fontSize:9,color:C.terra,fontWeight:700}}>{r.id}</span>
+                </div>
+                <div style={{fontSize:11,color:C.ink,lineHeight:1.6,fontFamily:"'Lora',serif"}}>{r.texto}</div>
+              </div>
+            ))}
+          </div>
+        )}
+        {q.length<2&&<div className="mono" style={{padding:"12px 18px",color:C.ghost,fontSize:9}}>// digite 2+ caracteres — busca em todas as dicas do sistema</div>}
+      </div>
     </div>
   );
 }
@@ -1025,6 +1166,21 @@ function TelaProcesso({processo,secretarias,onUpdate,perfil}){
                 <DateField label="INÍCIO" value={processo.data_inicio} onChange={v=>onUpdate({data_inicio:v})} readonly={readonly}/>
                 <DateField label="PRAZO" value={processo.data_prazo} onChange={v=>onUpdate({data_prazo:v})} readonly={readonly}/>
               </div>
+              {/* Observações gerais */}
+              {!readonly?(
+                <textarea value={processo.obs_geral||""} onChange={e=>onUpdate({obs_geral:e.target.value})}
+                  placeholder="＋ observações gerais do processo…"
+                  rows={2}
+                  style={{width:"100%",fontSize:11,border:`1px dashed ${C.tape}`,borderRadius:2,
+                    padding:"6px 10px",resize:"vertical",background:"transparent",
+                    fontFamily:"'Lora',serif",color:C.faded,marginTop:4}}/>
+              ):(
+                processo.obs_geral&&<div style={{fontSize:11,color:C.faded,fontStyle:"italic",
+                  marginTop:4,padding:"6px 10px",background:`${C.paper}88`,
+                  borderLeft:`2px solid ${C.tape}`,fontFamily:"'Lora',serif"}}>
+                  {processo.obs_geral}
+                </div>
+              )}
               <div style={{display:"flex",flexDirection:"column",gap:4}}>
                 <div style={{display:"flex",gap:6,alignItems:"center"}}><span className="mono" style={{fontSize:8,color:C.ghost,minWidth:40}}>ETAPAS</span><div style={{flex:1}}><ProgressBar p={pE} color={mc.color} height={4}/></div><span className="mono" style={{fontSize:9,color:C.faded,minWidth:30,textAlign:"right"}}>{pE}%</span></div>
                 {temDocs&&processo.docs?.length>0&&<div style={{display:"flex",gap:6,alignItems:"center"}}><span className="mono" style={{fontSize:8,color:C.ghost,minWidth:40}}>DOCS</span><div style={{flex:1}}><ProgressBar p={pD} color={C.faded} height={4}/></div><span className="mono" style={{fontSize:9,color:C.faded,minWidth:30,textAlign:"right"}}>{pD}%</span></div>}
@@ -1261,6 +1417,8 @@ export default function App(){
   const [processoId,setProcessoId]=useState(null);
   const [showModal,setShowModal]=useState(false);
   const [showBusca,setShowBusca]=useState(false);
+  const [showBuscaDicas,setShowBuscaDicas]=useState(false);
+  const [showBuscaDicas,setShowBuscaDicas]=useState(false);
   const [showActions,setShowActions]=useState(false);
   const [toast,setToast]=useState(null);
   const [salvando,setSalvando]=useState(false);
@@ -1344,6 +1502,7 @@ export default function App(){
         </nav>
         <div className="topbar-actions">
           <button className="btn-icon" onClick={()=>setShowBusca(true)} title="Ctrl+K">⌕</button>
+          <button className="btn-icon" onClick={()=>setShowBuscaDicas(true)} title="Buscar dicas">💡</button>
           {salvando&&<span className="mono" style={{fontSize:8,color:C.ghost,padding:"0 6px"}}>SALVANDO…</span>}
           <button className="btn-icon" onClick={handleLogout} title="Sair" style={{fontSize:10,color:"rgba(240,232,213,.3)"}}>SAIR</button>
           {podeEditar&&<button className="btn-primary" onClick={()=>setShowModal(true)} style={{fontSize:11,padding:"8px 18px",letterSpacing:".12em"}}>+ NOVO</button>}
@@ -1428,6 +1587,8 @@ export default function App(){
 
       {showModal&&podeEditar&&<ModalProcesso onSave={async p=>{ await salvarProcesso(p); setShowModal(false); }} onClose={()=>setShowModal(false)} userId={user.id}/>}
       {showBusca&&<BuscaGlobal processos={processos} onSelect={abrirProcesso} onClose={()=>setShowBusca(false)}/>}
+      {showBuscaDicas&&<BuscaDicas onClose={()=>setShowBuscaDicas(false)}/>}
+      {showBuscaDicas&&<BuscaDicas onClose={()=>setShowBuscaDicas(false)}/>}
       {toast&&<Toast msg={toast}/>}
     </div>
   );
