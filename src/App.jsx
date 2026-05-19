@@ -48,6 +48,38 @@ const supa = {
     this._token=null; this._user=null;
     localStorage.removeItem("sb_token"); localStorage.removeItem("sb_refresh");
   },
+  async uploadAnexo(processoId, docUid, file) {
+    const ext = file.name.split('.').pop();
+    const path = `${processoId}/${docUid}/${Date.now()}.${ext}`;
+    const r = await fetch(`${SUPA_URL}/storage/v1/object/processos/${path}`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${this._token}`,
+        "x-upsert": "false",
+      },
+      body: file,
+    });
+    if(!r.ok){ const e=await r.json().catch(()=>{}); throw new Error(e?.message||"Erro no upload"); }
+    return path;
+  },
+  getAnexoUrl(path) {
+    return `${SUPA_URL}/storage/v1/object/authenticated/processos/${path}`;
+  },
+  async getAnexoSigned(path) {
+    const r = await fetch(`${SUPA_URL}/storage/v1/object/sign/processos/${path}`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${this._token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({expiresIn: 3600}),
+    });
+    const data = await r.json();
+    return `${SUPA_URL}/storage/v1${data.signedURL}`;
+  },
+  async deleteAnexo(path) {
+    await this.req(`/storage/v1/object/processos/${path}`, {method:"DELETE"});
+  },
   async resetPassword(email) {
     const r = await fetch(`${SUPA_URL}/auth/v1/recover`, {
       method: "POST",
@@ -187,6 +219,86 @@ const DICAS_ETAPAS={
   "Sessão Pública — Lances": "Sessão eletrônica (via COMPRASNET ou plataforma similar) ou presencial de lances. O Pregoeiro conduz a disputa, negocia com o menor lance e verifica a exequibilidade da proposta.",
   "Negociação": "Após os lances, o Pregoeiro negocia diretamente com o primeiro colocado para tentar reduzir ainda mais o valor. Registrar toda a negociação na ata.",
   "Ata da Sessão": "Documento que registra todos os atos da sessão pública: propostas, lances, negociação, resultado e recursos. Deve ser assinada pelo Pregoeiro e pela equipe de apoio.",
+};
+
+const SUBTITULOS_DOC={
+  // Concorrência
+  "d1":"Documento de Formalização de Demanda — pedido formal da secretaria ao setor de licitações",
+  "d2":"Projetos técnicos necessários para execução da obra (arquitetônico, estrutural, elétrico etc.)",
+  "d3":"Levantamento detalhado dos custos da obra com base no SINAPI",
+  "d4":"Detalhamento do custo de cada item da planilha com insumos e quantidades",
+  "d5":"Cálculo dos encargos trabalhistas incidentes sobre a mão de obra",
+  "d6":"Percentual de benefícios e despesas indiretas sobre o custo direto da obra",
+  "d7":"Planejamento da execução física e dos desembolsos financeiros mês a mês",
+  "d8":"Estudo que justifica a necessidade e a solução de contratação escolhida",
+  "d9":"Documento que define o objeto, prazo, obrigações e critérios da contratação",
+  "d10":"Formalização da abertura do processo — aqui é gerado o número do processo administrativo",
+  "d11":"Memorando ao setor de Contabilidade solicitando confirmação da disponibilidade orçamentária",
+  "d12":"Confirmação da Contabilidade com a rubrica de onde sairá o recurso — copie o texto exato",
+  "d13":"Comunicação formal ao Gestor de Licitações solicitando abertura do processo licitatório",
+  "d14":"Autorização do Prefeito ou Secretário competente para início do processo",
+  "d15":"Rascunho inicial do edital — consultar QCI, ETP (item 5) e item 8 do TR antes de redigir",
+  "d16":"Encaminhamento da minuta ao setor jurídico para análise de legalidade",
+  "d17":"Análise da Procuradoria sobre a legalidade do processo — atentar para quem assinou",
+  "d18":"Versão final do edital após incorporar correções do jurídico — documento que será publicado",
+  "d19":"Comunicação formal ao Ordenador solicitando autorização para publicar o edital",
+  "d20":"Autorização do Ordenador de Despesas para proceder com a publicação",
+  "d21":"Comunicação designando o Agente de Contratação para conduzir o certame",
+  "d22":"Ato formal de designação do Agente — deve ser publicado antes da sessão com certificado anexo",
+  "d23":"Documento principal do certame — assinado pelo Agente, Planejamento e Ordenador",
+  "d24":"Resumo do edital para publicação nos veículos de comunicação",
+  "d25":"Publicação no PNCP, DOE e jornal — imprimir despacho em duas vias (uma fica com Publicação)",
+  "d26":"Início formal da sessão pública pelo Agente de Contratação",
+  "d27":"Caução prévia exigida do licitante para garantir seriedade da proposta",
+  "d28":"Proposta de preço definitiva apresentada pelo licitante vencedor",
+  "d29":"Encaminhamento da proposta à Engenharia para análise técnica de conformidade",
+  "d30":"Análise da Engenharia verificando se a proposta está de acordo com o edital e com o QCI/ETP",
+  "d31":"Documentos de regularidade jurídica, fiscal, trabalhista e técnica do vencedor",
+  "d32":"Verificação da autenticidade e validade das certidões apresentadas pelo vencedor",
+  "d33":"Encaminhamento dos documentos de habilitação técnica à Engenharia para análise",
+  "d34":"Análise da Engenharia sobre o acervo técnico e capacidade operacional do vencedor",
+  "d35":"Abertura de prazo para interposição de recursos pelos licitantes",
+  "d36":"Processamento e resposta às razões de recurso apresentadas",
+  "d37":"Registro de todos os atos da sessão — assinado pelo Agente e pela equipe de apoio",
+  "d38":"Lista oficial dos vencedores após julgamento definitivo",
+  "d39":"Documentação completa dos recursos interpostos com pareceres e decisões",
+  "d40":"Encaminhamento do processo ao Controle Interno para análise prévia à homologação",
+  "d41":"Análise do Controle Interno sobre a regularidade do processo — verificar ressalvas",
+  "d42":"Adjudicação atribui o objeto ao vencedor; homologação encerra o processo licitatório",
+  "d43":"Publicação obrigatória no PNCP em até 3 dias úteis após a homologação",
+  "d44":"Comunicação ao vencedor para apresentar garantia contratual em até 10 dias úteis",
+  "d45":"Registro da obra nos sistemas ASPEC e GEO-Obras",
+  "d46":"Designação formal de servidor para acompanhar e fiscalizar a execução do contrato",
+  "d47":"Garantia contratual apresentada pelo vencedor — geralmente 5% do valor do contrato",
+  "d48":"Comunicação ao vencedor para comparecer e assinar o contrato",
+  "d49":"Documento contratual assinado pelo vencedor e pelo Ordenador de Despesas",
+  "d50":"Publicação do contrato no PNCP (até 20 dias úteis), GEO-Obras e Diário Oficial",
+  "d51":"Encaminhamento do processo físico para o arquivo",
+  "d52":"Documento que encerra formalmente o processo após execução do contrato",
+  // Dispensa
+  "dd1":"Identificação do processo — inclui número, objeto, modalidade e secretaria solicitante",
+  "dd2":"Pedido formal da secretaria descrevendo o que precisa ser contratado e por quê",
+  "dd3":"Autorização do Ordenador de Despesas para abertura do processo",
+  "dd4":"Confirmação da Contabilidade com a rubrica orçamentária — copie o texto exato",
+  "dd5":"Justificativa enquadrando o caso no art. 75 da Lei 14.133 — cite o inciso específico",
+  "dd6":"Comprovação de que o valor é de mercado — mínimo 3 orçamentos ou tabela oficial",
+  "dd7":"Certidões de regularidade da empresa: Municipal, Estadual, Federal, FGTS e CNDT",
+  "dd8":"Análise da Procuradoria sobre a legalidade da contratação direta — atentar para o assinante",
+  "dd9":"Autorização formal do Prefeito para a contratação — enviada por e-mail após assinatura",
+  "dd10":"Publicação obrigatória no PNCP antes da assinatura do contrato",
+  "dd11":"Formalização da contratação — pode ser contrato ou nota de empenho conforme o valor",
+  // Inexigibilidade
+  "di1":"Identificação do processo — sempre verificar se os incisos estão corretos na capa",
+  "di2":"Pedido formal do órgão demandante — o solicitante geralmente é quem assinou o DFD",
+  "di3":"Autorização do Ordenador para abertura — assinada pelo Prefeito",
+  "di4":"Confirmação da Contabilidade com a rubrica orçamentária — copie o texto exato",
+  "di5":"Demonstração de que a competição é inviável — cite o inciso do art. 74 da Lei 14.133",
+  "di6":"Dossiê comprovando notória especialização: currículo, obras, prêmios, certificados",
+  "di7":"Certidões de regularidade da empresa: Municipal, Estadual, Federal, FGTS e CNDT",
+  "di8":"Análise da Procuradoria — atentar para quem é o Procurador que assinou",
+  "di9":"Termo de Ratificação assinado pelo Prefeito — enviado por e-mail após assinatura",
+  "di10":"Publicação obrigatória no PNCP antes da assinatura do contrato",
+  "di11":"Formalização da contratação — contrato ou empenho conforme o valor",
 };
 
 const DICAS_PADRAO={
@@ -621,30 +733,36 @@ function FolderCard({processo,onAbrir,onDelete,idx,perfil}){
 }
 
 // ─── Busca Global ─────────────────────────────────────────────────────────────
-function BuscaGlobal({processos,onSelect,onClose}){
+function BuscaGlobal({processos,secretarias,pessoas,onSelect,onClose,onVerOrgao,onVerPessoa}){
   const [q,setQ]=useState(""); const inputRef=useRef();
   useEffect(()=>inputRef.current?.focus(),[]);
-  const res=q.trim().length<2?[]:processos.flatMap(p=>{
-    const ql=q.toLowerCase(); const hits=[];
-    if(p.nome.toLowerCase().includes(ql)||(p.numero||"").toLowerCase().includes(ql)) hits.push({tipo:"PROCESSO",label:p.nome,sub:p.modalidade,id:p.id});
-    p.etapas.filter(e=>e.nome.toLowerCase().includes(ql)).forEach(e=>hits.push({tipo:"ETAPA",label:e.nome,sub:p.nome,id:p.id}));
-    p.docs.filter(d=>d.nome.toLowerCase().includes(ql)).forEach(d=>hits.push({tipo:"DOC",label:d.nome,sub:p.nome,id:p.id}));
-    return hits;
-  }).slice(0,10);
+  const res=q.trim().length<2?[]:([
+    ...processos.flatMap(p=>{
+      const ql=q.toLowerCase(); const hits=[];
+      if((p.objeto||p.nome).toLowerCase().includes(ql)||(p.numero||"").toLowerCase().includes(ql)||(p.numero_licitacao||"").toLowerCase().includes(ql)) hits.push({tipo:"PROCESSO",label:p.objeto||p.nome,sub:`${p.modalidade}${p.numero_licitacao?" · Nº "+p.numero_licitacao:""}`,id:p.id,acao:()=>onSelect(p.id)});
+      p.etapas.filter(e=>e.nome.toLowerCase().includes(ql)).forEach(e=>hits.push({tipo:"ETAPA",label:e.nome,sub:p.objeto||p.nome,id:p.id,acao:()=>onSelect(p.id)}));
+      p.docs.filter(d=>d.nome.toLowerCase().includes(ql)).forEach(d=>hits.push({tipo:"DOC",label:d.nome,sub:p.objeto||p.nome,id:p.id,acao:()=>onSelect(p.id)}));
+      return hits;
+    }),
+    ...(secretarias||[]).filter(s=>s.nome.toLowerCase().includes(q.toLowerCase())||(s.secretario||"").toLowerCase().includes(q.toLowerCase())).map(s=>({tipo:"ÓRGÃO",label:s.nome,sub:s.secretario||"",id:s.id,acao:onVerOrgao})),
+    ...(pessoas||[]).filter(p=>p.nome.toLowerCase().includes(q.toLowerCase())||(p.cargo||"").toLowerCase().includes(q.toLowerCase())).map(p=>({tipo:"PESSOA",label:p.nome,sub:p.cargo||"",id:p.id,acao:onVerPessoa})),
+  ]).slice(0,12);
   return(
     <div className="search-overlay" onClick={onClose}>
       <div className="search-box fade-up" onClick={e=>e.stopPropagation()}>
         <div style={{display:"flex",alignItems:"center",borderBottom:`1px solid ${C.tape}`}}>
-          <span className="mono" style={{padding:"0 14px",color:C.ghost,fontSize:11}}>SEARCH //</span>
+          <span className="mono" style={{padding:"0 14px",color:C.ghost,fontSize:10,whiteSpace:"nowrap"}}>⌕ PROCESSOS · ÓRGÃOS · PESSOAS</span>
           <input ref={inputRef} className="search-input" value={q} onChange={e=>setQ(e.target.value)} placeholder="buscar…" onKeyDown={e=>e.key==="Escape"&&onClose()}/>
           <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:C.ghost,padding:"14px",fontFamily:"'Space Mono',monospace"}}>✕</button>
         </div>
         {q.length>=2&&(res.length===0?<div className="mono" style={{padding:"20px",textAlign:"center",color:C.ghost,fontSize:10}}>// NENHUM RESULTADO</div>:(
           <div style={{maxHeight:360,overflowY:"auto"}}>
             {res.map((r,i)=>(
-              <div key={i} className="search-result" onClick={()=>{onSelect(r.id);onClose();}}>
+              <div key={i} className="search-result" onClick={()=>{r.acao?r.acao():onSelect(r.id);onClose();}}>
                 <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                  <span className="mono" style={{fontSize:8,color:C.ghost,minWidth:52}}>[{r.tipo}]</span>
+                  <span className="mono" style={{fontSize:8,padding:"1px 6px",borderRadius:2,minWidth:52,textAlign:"center",
+                    background:r.tipo==="PROCESSO"?`${C.terra}22`:r.tipo==="ÓRGÃO"?`${C.sage}22`:r.tipo==="PESSOA"?`${C.ochre}22`:`${C.paperDeep}`,
+                    color:r.tipo==="PROCESSO"?C.terra:r.tipo==="ÓRGÃO"?C.sage:r.tipo==="PESSOA"?C.ochre:C.ghost}}>{r.tipo}</span>
                   <div><div style={{fontSize:12,fontWeight:600,color:C.ink}}>{r.label}</div><div className="mono" style={{fontSize:9,color:C.ghost}}>{r.sub}</div></div>
                 </div>
               </div>
@@ -829,7 +947,7 @@ function BuscaDicas({onClose}){
     <div className="search-overlay" onClick={onClose}>
       <div className="search-box fade-up" onClick={e=>e.stopPropagation()}>
         <div style={{display:"flex",alignItems:"center",borderBottom:`1px solid ${C.tape}`}}>
-          <span className="mono" style={{padding:"0 14px",color:C.ghost,fontSize:11}}>💡 DICAS //</span>
+          <span className="mono" style={{padding:"0 14px",color:C.ghost,fontSize:10,whiteSpace:"nowrap"}}>💡 BUSCAR NAS DICAS</span>
           <input ref={inputRef} className="search-input" value={q} onChange={e=>setQ(e.target.value)}
             placeholder="buscar nas dicas… (ex: dotação, certidão, prazo)"
             onKeyDown={e=>e.key==="Escape"&&onClose()}/>
@@ -911,17 +1029,20 @@ function PopoverDica({doc,onClose,onSalvar,readonly}){
 function AbaDocumentos({processo,onUpdate,readonly}){
   const [editId,setEditId]=useState(null); const [notaTemp,setNotaTemp]=useState("");
   const [filtroFase,setFiltroFase]=useState("todas"); const [docMarcando,setDocMarcando]=useState(null); const [docDica,setDocDica]=useState(null);
+  const [editNomeDocId,setEditNomeDocId]=useState(null); const [nomeDocTemp,setNomeDocTemp]=useState("");
+  const [buscaDoc,setBuscaDoc]=useState("");
   const fases=getFases(processo.modalidade);
   function upDoc(uid,ch){ if(readonly) return; onUpdate({docs:processo.docs.map(d=>d.uid===uid?{...d,...ch}:d)}); }
   if(!fases.length) return <div style={{padding:40,textAlign:"center",color:C.ghost,fontFamily:"'Space Mono',monospace",fontSize:10}}>// SEM MAPEAMENTO DOCUMENTAL PARA ESTA MODALIDADE</div>;
   const done=processo.docs.filter(d=>d.status==="concluído"||d.status==="dispensado").length;
   const pctD=processo.docs.length?Math.round((done/processo.docs.length)*100):0;
-  const docsFilt=filtroFase==="todas"?processo.docs:processo.docs.filter(d=>d.faseId===filtroFase);
+  const docsFilt=(filtroFase==="todas"?processo.docs:processo.docs.filter(d=>d.faseId===filtroFase))
+    .filter(d=>!buscaDoc.trim()||d.nome.toLowerCase().includes(buscaDoc.toLowerCase())||(SUBTITULOS_DOC[d.id]||"").toLowerCase().includes(buscaDoc.toLowerCase())||(d.nota||"").toLowerCase().includes(buscaDoc.toLowerCase()));
   const alertas=processo.docs.filter(d=>d.referencias?.some(uid=>{ const r=processo.docs.find(x=>x.uid===uid); return r&&!["concluído","dispensado"].includes(r.status); }));
   const CORES={ochre:{bg:"#f5ead0",border:C.ochreLight,text:C.ochre},terra:{bg:"#f0dcd8",border:"#c07060",text:C.terra},sage:{bg:"#deebd8",border:"#7aaa6a",text:C.sage},violet:{bg:"#ece8f5",border:"#9a7acf",text:C.violet}};
   return(
     <div>
-      <div style={{padding:"10px 16px",borderBottom:`1px solid ${C.tape}`,background:C.paperDark,display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
+      <div style={{padding:"10px 16px",borderBottom:`1px solid ${C.tape}`,background:C.paperDark,display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
         <div style={{flex:1,minWidth:140}}>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
             <span className="mono" style={{fontSize:8,color:C.faded}}>{done}/{processo.docs.length} DOCUMENTOS</span>
@@ -929,6 +1050,11 @@ function AbaDocumentos({processo,onUpdate,readonly}){
           </div>
           <ProgressBar p={pctD} height={3}/>
         </div>
+        <input value={buscaDoc} onChange={e=>setBuscaDoc(e.target.value)}
+          placeholder="filtrar documentos…"
+          style={{border:`1px solid ${C.tape}`,borderRadius:2,padding:"5px 9px",fontSize:10,
+            background:C.paper,fontFamily:"'Space Mono',monospace",color:C.ink,
+            outline:"none",width:160}}/>
         <select value={filtroFase} onChange={e=>setFiltroFase(e.target.value)} style={{border:`1px solid ${C.tape}`,borderRadius:2,padding:"5px 8px",fontSize:10,background:C.paper,fontFamily:"'Space Mono',monospace",color:C.ink}}>
           <option value="todas">TODAS AS FASES</option>
           {fases.map(f=><option key={f.id} value={f.id}>{f.label.toUpperCase()}</option>)}
@@ -959,12 +1085,28 @@ function AbaDocumentos({processo,onUpdate,readonly}){
                 <div key={doc.uid} className="doc-row" style={{borderBottom:di===docs.length-1?"none":`1px solid ${C.paperDeep}`,background:refsPend?.length>0?"#fdf8ec":"transparent"}}>
                   <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:10,padding:"9px 16px 9px 24px",alignItems:"start"}}>
                     <div>
-                      <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:3,flexWrap:"wrap"}}>
-                        <span style={{fontSize:12,fontWeight:600,color:C.ink,opacity:doc.status==="dispensado"?.5:1,fontFamily:"'Lora',serif"}}>{doc.nome}</span>
+                      <div style={{display:"flex",gap:6,alignItems:"flex-start",marginBottom:2,flexWrap:"wrap"}}>
+                        {editNomeDocId===doc.uid&&!readonly?(
+                          <input value={nomeDocTemp} onChange={e=>setNomeDocTemp(e.target.value)} autoFocus
+                            onBlur={()=>{upDoc(doc.uid,{nome:nomeDocTemp.trim()||doc.nome});setEditNomeDocId(null);}}
+                            onKeyDown={e=>{if(e.key==="Enter"){upDoc(doc.uid,{nome:nomeDocTemp.trim()||doc.nome});setEditNomeDocId(null);}if(e.key==="Escape")setEditNomeDocId(null);}}
+                            style={{fontSize:12,fontWeight:600,border:`1px solid ${C.terra}`,borderRadius:2,padding:"2px 6px",flex:1,fontFamily:"'Lora',serif"}}/>
+                        ):(
+                          <span style={{fontSize:12,fontWeight:600,color:C.ink,opacity:doc.status==="dispensado"?.5:1,fontFamily:"'Lora',serif"}}>{doc.nome}</span>
+                        )}
+                        {!readonly&&editNomeDocId!==doc.uid&&(
+                          <button onClick={()=>{setEditNomeDocId(doc.uid);setNomeDocTemp(doc.nome);}}
+                            style={{background:"none",border:"none",cursor:"pointer",color:C.ghost,fontSize:10,padding:"0 2px",flexShrink:0}} title="Editar nome">✎</button>
+                        )}
                         {temDica&&<button onClick={()=>setDocDica(doc)} style={{background:doc.dicaCustom?"#f5ead0":C.paperDark,border:`1px solid ${doc.dicaCustom?C.ochreLight:C.tape}`,borderRadius:"50%",width:16,height:16,fontSize:9,cursor:"pointer",color:doc.dicaCustom?C.ochre:C.ghost,fontFamily:"'Space Mono',monospace",fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>?</button>}
                         {temM&&<span style={{fontSize:10,color:C.ochre,cursor:"pointer"}} onClick={()=>!readonly&&setDocMarcando(doc)}>📌 {doc.marcacoes.length}</span>}
                         {temR&&<span style={{fontSize:10,color:refsPend?.length>0?C.rust:C.sage,cursor:"pointer"}} onClick={()=>!readonly&&setDocMarcando(doc)}>🔗 {doc.referencias.length}</span>}
                       </div>
+                      {SUBTITULOS_DOC[doc.id]&&(
+                        <div style={{fontSize:10,color:C.ghost,fontStyle:"italic",marginBottom:3,fontFamily:"'Lora',serif",lineHeight:1.4}}>
+                          {SUBTITULOS_DOC[doc.id]}
+                        </div>
+                      )}
                       <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",marginBottom:3}}>
                         <span className="mono" style={{fontSize:9,color:C.ghost}}>{doc.resp}</span>
                         <span style={{color:C.tape}}>·</span>
@@ -985,6 +1127,8 @@ function AbaDocumentos({processo,onUpdate,readonly}){
                       ):(
                         <div onClick={()=>{if(!readonly){setEditId(doc.uid);setNotaTemp(doc.nota||"");}}} style={{fontSize:11,color:doc.nota?C.faded:C.ghost,cursor:readonly?"default":"pointer",fontStyle:doc.nota?"normal":"italic",fontFamily:"'Lora',serif"}}>{doc.nota||(!readonly?"＋ observação…":"—")}</div>
                       )}
+                      <AnexosDoc doc={doc} processoId={processo.id} readonly={readonly}
+                        onUpdate={(ch)=>upDoc(doc.uid,ch)}/>
                     </div>
                     <div style={{display:"flex",flexDirection:"column",gap:4,alignItems:"flex-end"}}>
                       <StatusPill status={doc.status} config={STATUS_DOC} onChange={s=>upDoc(doc.uid,{status:s})} readonly={readonly}/>
@@ -1501,11 +1645,25 @@ export default function App(){
           {tela==="processo"&&aberto&&<div style={{display:"flex",alignItems:"center",padding:"0 12px",borderLeft:`1px solid rgba(255,255,255,.08)`,color:"rgba(240,232,213,.3)",fontSize:9,fontFamily:"'Space Mono',monospace",letterSpacing:".06em",maxWidth:200,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>// {aberto.nome.toUpperCase().slice(0,24)}</div>}
         </nav>
         <div className="topbar-actions">
-          <button className="btn-icon" onClick={()=>setShowBusca(true)} title="Ctrl+K">⌕</button>
-          <button className="btn-icon" onClick={()=>setShowBuscaDicas(true)} title="Buscar dicas">💡</button>
-          {salvando&&<span className="mono" style={{fontSize:8,color:C.ghost,padding:"0 6px"}}>SALVANDO…</span>}
-          <button className="btn-icon" onClick={handleLogout} title="Sair" style={{fontSize:10,color:"rgba(240,232,213,.3)"}}>SAIR</button>
+          <button onClick={()=>setShowBusca(true)}
+            style={{background:"rgba(255,255,255,.08)",border:"1px solid rgba(255,255,255,.15)",borderRadius:3,
+              padding:"5px 12px",cursor:"pointer",color:C.paper,fontFamily:"'Space Mono',monospace",
+              fontSize:10,display:"flex",alignItems:"center",gap:6,letterSpacing:".06em"}}>
+            ⌕ BUSCAR
+          </button>
+          <button onClick={()=>setShowBuscaDicas(true)} title="Buscar nas dicas"
+            style={{background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",borderRadius:3,
+              padding:"5px 10px",cursor:"pointer",color:C.ochreLight,fontSize:12}}>
+            💡
+          </button>
+          {salvando&&<span className="mono" style={{fontSize:8,color:C.ghost,padding:"0 4px"}}>SALVANDO…</span>}
           {podeEditar&&<button className="btn-primary" onClick={()=>setShowModal(true)} style={{fontSize:11,padding:"8px 18px",letterSpacing:".12em"}}>+ NOVO</button>}
+          <div style={{width:1,height:20,background:"rgba(255,255,255,.1)",margin:"0 2px"}}/>
+          <button onClick={handleLogout}
+            style={{background:"none",border:"1px solid rgba(255,255,255,.1)",borderRadius:3,padding:"5px 10px",
+              cursor:"pointer",color:"rgba(240,232,213,.4)",fontFamily:"'Space Mono',monospace",fontSize:9,letterSpacing:".08em"}}>
+            SAIR
+          </button>
         </div>
         <div className="topbar-mobile-right">
           <button className="btn-icon" onClick={()=>setShowBusca(true)}>⌕</button>
@@ -1586,7 +1744,7 @@ export default function App(){
       </nav>
 
       {showModal&&podeEditar&&<ModalProcesso onSave={async p=>{ await salvarProcesso(p); setShowModal(false); }} onClose={()=>setShowModal(false)} userId={user.id}/>}
-      {showBusca&&<BuscaGlobal processos={processos} onSelect={abrirProcesso} onClose={()=>setShowBusca(false)}/>}
+      {showBusca&&<BuscaGlobal processos={processos} secretarias={secretarias} pessoas={pessoas} onSelect={(id)=>{abrirProcesso(id);setShowBusca(false);}} onVerOrgao={()=>{setTela("secretarias");setShowBusca(false);}} onVerPessoa={()=>{setTela("pessoas");setShowBusca(false);}} onClose={()=>setShowBusca(false)}/>}
       {showBuscaDicas&&<BuscaDicas onClose={()=>setShowBuscaDicas(false)}/>}
       {showBuscaDicas&&<BuscaDicas onClose={()=>setShowBuscaDicas(false)}/>}
       {toast&&<Toast msg={toast}/>}
