@@ -678,7 +678,7 @@ function FolderCard({processo,onAbrir,onDelete,idx,perfil}){
   const podeExcluir=perfil==="admin";
   return(
     const diasPrazo=processo.data_prazo&&!isConcluido(processo)?Math.ceil((new Date(processo.data_prazo+"T12:00:00")-new Date())/(1000*60*60*24)):null;
-    const corPrazo=diasPrazo!==null?(diasPrazo<0?C.rust:diasPrazo<=7?C.ochre:diasPrazo<=15?"#c8a030":null):null;
+    const corPrazo=diasPrazo!==null?(diasPrazo<0?C.rust:diasPrazo<=7?C.ochre:diasPrazo<=15?'#c8a030':null):null;
     <div className="folder fade-up" style={{marginTop:24,animationDelay:`${idx*.05}s`,...(corPrazo?{borderColor:corPrazo,borderWidth:2}:{})}}>
       <div className="folder-tab" style={{background:mc.color,borderColor:mc.color,color:C.paper}}>
         <span className="mono" style={{fontSize:9,letterSpacing:".12em"}}>CODE_{mc.code}</span>
@@ -1082,7 +1082,7 @@ function AbaDocumentos({processo,onUpdate,readonly}){
               const refsPend=doc.referencias?.filter(uid=>{ const r=processo.docs.find(x=>x.uid===uid); return r&&!["concluído","dispensado"].includes(r.status); });
               const temDica=!!(DICAS_PADRAO[doc.id]||doc.dicaCustom);
               return(
-                <div key={doc.uid} className="doc-row" style={{borderBottom:di===docs.length-1?"none":`1px solid ${C.paperDeep}`,background:refsPend?.length>0?"#fdf8ec":"transparent"}}>
+                <div key={doc.uid} className="doc-row" style={{borderBottom:di===docs.length-1?"none":`1px solid ${C.paperDeep}`,background:refsPend?.length>0?'#fdf8ec':"transparent"}}>
                   <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:10,padding:"9px 16px 9px 24px",alignItems:"start"}}>
                     <div>
                       <div style={{display:"flex",gap:6,alignItems:"flex-start",marginBottom:2,flexWrap:"wrap"}}>
@@ -1098,7 +1098,7 @@ function AbaDocumentos({processo,onUpdate,readonly}){
                           <button onClick={()=>{setEditNomeDocId(doc.uid);setNomeDocTemp(doc.nome);}}
                             style={{background:"none",border:"none",cursor:"pointer",color:C.ghost,fontSize:10,padding:"0 2px",flexShrink:0}} title="Editar nome">✎</button>
                         )}
-                        {temDica&&<button onClick={()=>setDocDica(doc)} style={{background:doc.dicaCustom?"#f5ead0":C.paperDark,border:`1px solid ${doc.dicaCustom?C.ochreLight:C.tape}`,borderRadius:"50%",width:16,height:16,fontSize:9,cursor:"pointer",color:doc.dicaCustom?C.ochre:C.ghost,fontFamily:"'Space Mono',monospace",fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>?</button>}
+                        {temDica&&<button onClick={()=>setDocDica(doc)} style={{background:doc.dicaCustom?'#f5ead0':C.paperDark,border:`1px solid ${doc.dicaCustom?C.ochreLight:C.tape}`,borderRadius:"50%",width:16,height:16,fontSize:9,cursor:"pointer",color:doc.dicaCustom?C.ochre:C.ghost,fontFamily:"'Space Mono',monospace",fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>?</button>}
                         {temM&&<span style={{fontSize:10,color:C.ochre,cursor:"pointer"}} onClick={()=>!readonly&&setDocMarcando(doc)}>📌 {doc.marcacoes.length}</span>}
                         {temR&&<span style={{fontSize:10,color:refsPend?.length>0?C.rust:C.sage,cursor:"pointer"}} onClick={()=>!readonly&&setDocMarcando(doc)}>🔗 {doc.referencias.length}</span>}
                       </div>
@@ -1251,7 +1251,7 @@ function AbaOrgaosProc({processo,secretarias,onUpdate,readonly}){
             <div style={{fontSize:13,fontWeight:700,color:C.ink,fontFamily:"'Playfair Display',serif"}}>{s.nome}</div>
             {s.secretario&&<div className="mono" style={{fontSize:9,color:C.ghost}}>SEC: {s.secretario}</div>}
             {s.email&&<div className="mono" style={{fontSize:9,color:C.ghost}}>{s.email}</div>}
-            <span className="mono" style={{fontSize:8,padding:"1px 6px",borderRadius:1,background:s.possui_fundos?"#deebd8":"#f0dcd8",color:s.possui_fundos?C.sage:C.rust,border:`1px solid ${s.possui_fundos?"#7aaa6a":"#c07060"}`}}>{s.possui_fundos?"✓ FUNDOS":"✗ SEM FUNDOS"}</span>
+            <span className="mono" style={{fontSize:8,padding:"1px 6px",borderRadius:1,background:s.possui_fundos?'#deebd8':"#f0dcd8",color:s.possui_fundos?C.sage:C.rust,border:`1px solid ${s.possui_fundos?'#7aaa6a':"#c07060"}`}}>{s.possui_fundos?"✓ FUNDOS":"✗ SEM FUNDOS"}</span>
           </div>
           {!readonly&&<button className="del-btn" onClick={()=>onUpdate({secretarias_ids:(processo.secretarias_ids||[]).filter(x=>x!==s.id)})}>✕</button>}
         </div>
@@ -1532,7 +1532,7 @@ function AgendaSecretarias({secretarias,onUpdate,perfil}){
               <div style={{padding:"12px 14px"}}>
                 <div style={{display:"flex",justifyContent:"space-between",gap:7,marginBottom:7}}>
                   <div style={{fontSize:13,fontWeight:700,color:C.ink,fontFamily:"'Playfair Display',serif",lineHeight:1.3}}>{s.nome}</div>
-                  <span className="mono" style={{fontSize:8,padding:"2px 6px",borderRadius:1,flexShrink:0,background:s.possui_fundos?"#deebd8":"#f0dcd8",color:s.possui_fundos?C.sage:C.rust,border:`1px solid ${s.possui_fundos?"#7aaa6a":"#c07060"}`}}>{s.possui_fundos?"✓ FUNDOS":"✗ SEM FUNDOS"}</span>
+                  <span className="mono" style={{fontSize:8,padding:"2px 6px",borderRadius:1,flexShrink:0,background:s.possui_fundos?'#deebd8':"#f0dcd8",color:s.possui_fundos?C.sage:C.rust,border:`1px solid ${s.possui_fundos?'#7aaa6a':"#c07060"}`}}>{s.possui_fundos?"✓ FUNDOS":"✗ SEM FUNDOS"}</span>
                 </div>
                 {s.secretario&&<div className="mono" style={{fontSize:9,color:C.ghost,marginBottom:2}}>👤 {s.secretario}</div>}
                 {s.email&&<div className="mono" style={{fontSize:9,color:C.ghost,marginBottom:2}}>✉ {s.email}</div>}
