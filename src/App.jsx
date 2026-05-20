@@ -676,9 +676,9 @@ function FolderCard({processo,onAbrir,onDelete,idx,perfil}){
   const atual=processo.etapas.find(e=>e.status==="em andamento")||processo.etapas.find(e=>e.status==="pendente");
   const concluido=isConcluido(processo); const emAnd=isEmAndamento(processo);
   const podeExcluir=perfil==="admin";
+  const diasPrazo=processo.data_prazo&&!isConcluido(processo)?Math.ceil((new Date(processo.data_prazo+"T12:00:00")-new Date())/(1000*60*60*24)):null;
+  const corPrazo=diasPrazo!==null?(diasPrazo<0?C.rust:diasPrazo<=7?C.ochre:diasPrazo<=15?'#c8a030':null):null;
   return(
-    const diasPrazo=processo.data_prazo&&!isConcluido(processo)?Math.ceil((new Date(processo.data_prazo+"T12:00:00")-new Date())/(1000*60*60*24)):null;
-    const corPrazo=diasPrazo!==null?(diasPrazo<0?C.rust:diasPrazo<=7?C.ochre:diasPrazo<=15?'#c8a030':null):null;
     <div className="folder fade-up" style={{marginTop:24,animationDelay:`${idx*.05}s`,...(corPrazo?{borderColor:corPrazo,borderWidth:2}:{})}}>
       <div className="folder-tab" style={{background:mc.color,borderColor:mc.color,color:C.paper}}>
         <span className="mono" style={{fontSize:9,letterSpacing:".12em"}}>CODE_{mc.code}</span>
