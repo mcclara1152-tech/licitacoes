@@ -844,6 +844,9 @@ function AbaEtapas({processo,onUpdate,readonly}){
   const [editId,setEditId]=useState(null); const [notaTemp,setNotaTemp]=useState("");
   const [addNome,setAddNome]=useState(""); const [showAdd,setShowAdd]=useState(false);
   const [dragIdx,setDragIdx]=useState(null); const [overIdx,setOverIdx]=useState(null);
+  const [dicaEtapa,setDicaEtapa]=useState(null);
+  const [editNomeId,setEditNomeId]=useState(null);
+  const [nomeTemp,setNomeTemp]=useState("");
   const dFrom=useRef(null); const touchIdx=useRef(null);
   function up(id,ch){ if(readonly) return; onUpdate({etapas:processo.etapas.map(e=>e.id===id?{...e,...ch}:e)}); }
   function del(id){ if(readonly) return; onUpdate({etapas:processo.etapas.filter(e=>e.id!==id)}); }
