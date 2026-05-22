@@ -1562,7 +1562,6 @@ export default function App(){
   const [showModal,setShowModal]=useState(false);
   const [showBusca,setShowBusca]=useState(false);
   const [showBuscaDicas,setShowBuscaDicas]=useState(false);
-  const [showBuscaDicas,setShowBuscaDicas]=useState(false);
   const [showActions,setShowActions]=useState(false);
   const [toast,setToast]=useState(null);
   const [salvando,setSalvando]=useState(false);
