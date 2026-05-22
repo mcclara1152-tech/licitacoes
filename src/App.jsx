@@ -839,6 +839,85 @@ function ModalProcesso({processo,onSave,onClose,userId}){
   );
 }
 
+// ─── Anexos por documento ─────────────────────────────────────────────────────
+function AnexosDoc({doc,processoId,onUpdate,readonly}){
+  const [uploading,setUploading]=useState(false);
+  const [erro,setErro]=useState("");
+  const fileRef=useRef();
+  const anexos=doc.anexos||[];
+  async function handleUpload(file){
+    if(!file) return;
+    if(file.size>10*1024*1024){setErro("Arquivo muito grande (máx. 10MB)");return;}
+    setUploading(true); setErro("");
+    try{
+      const path=await supa.uploadAnexo(processoId,doc.uid,file);
+      onUpdate({anexos:[...anexos,{path,nome:file.name,tipo:file.type,tamanho:file.size,criadoEm:new Date().toISOString()}]});
+    }catch(e){setErro(e.message);}
+    setUploading(false);
+  }
+  async function abrirAnexo(path){
+    try{ const url=await supa.getAnexoSigned(path); window.open(url,"_blank"); }
+    catch(){ setErro("Erro ao abrir arquivo"); }
+  }
+  async function deletarAnexo(path){
+    if(!confirm("Remover este anexo?")) return;
+    try{ await supa.deleteAnexo(path); onUpdate({anexos:anexos.filter(a=>a.path!==path)}); }
+    catch(e){setErro(e.message);}
+  }
+  function fmtTam(b){ if(b<1024) return b+"B"; if(b<1024*1024) return (b/1024).toFixed(0)+"KB"; return (b/(1024*1024)).toFixed(1)+"MB"; }
+  function icone(t){ if(t?.includes("pdf")) return "📄"; if(t?.includes("image")) return "🖼"; if(t?.includes("word")||t?.includes("document")) return "📝"; return "📎"; }
+  return(
+    <div style={{marginTop:5}}>
+      {anexos.length>0&&(
+        <div style={{display:"flex",flexDirection:"column",gap:3,marginBottom:4}}>
+          {anexos.map((a,i)=>(
+            <div key={i} style={{display:"flex",alignItems:"center",gap:6,background:`${C.sage}15`,border:`1px solid ${C.sage}44`,borderRadius:2,padding:"3px 8px"}}>
+              <span style={{fontSize:10}}>{icone(a.tipo)}</span>
+              <button onClick={()=>abrirAnexo(a.path)} style={{background:"none",border:"none",cursor:"pointer",color:C.sage,fontFamily:"'Lora',serif",fontSize:10,textAlign:"left",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.nome}</button>
+              <span className="mono" style={{fontSize:8,color:C.ghost,flexShrink:0}}>{fmtTam(a.tamanho)}</span>
+              {!readonly&&<button className="del-btn" style={{fontSize:10}} onClick={()=>deletarAnexo(a.path)}>✕</button>}
+            </div>
+          ))}
+        </div>
+      )}
+      {!readonly&&(
+        <>
+          <input ref={fileRef} type="file" style={{display:"none"}} accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+            onChange={e=>{if(e.target.files[0])handleUpload(e.target.files[0]);e.target.value="";}}/>
+          <button onClick={()=>fileRef.current.click()} disabled={uploading} className="mono"
+            style={{background:"none",border:`1px dashed ${C.tape}`,borderRadius:2,padding:"2px 8px",fontSize:8,color:C.ghost,cursor:"pointer",letterSpacing:".06em"}}>
+            {uploading?"ENVIANDO...":"📎 ANEXAR"}
+          </button>
+          {erro&&<div className="mono" style={{fontSize:8,color:C.rust,marginTop:2}}>{erro}</div>}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Popover dica etapa ──────────────────────────────────────────────────────
+function PopoverDicaEtapa({etapa,onClose}){
+  const dica=DICAS_ETAPAS[etapa.nome];
+  if(!dica) return null;
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:400,display:"flex",alignItems:"flex-end",justifyContent:"center",padding:"0 0 70px"}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} className="fade-up"
+        style={{background:C.paper,border:`1px solid ${C.tape}`,borderTop:`3px solid ${C.ochre}`,borderRadius:"2px 2px 0 0",width:"100%",maxWidth:560,boxShadow:`0 -4px 24px rgba(26,18,8,.15)`,maxHeight:"70vh",overflowY:"auto"}}>
+        <div style={{padding:"10px 14px",borderBottom:`1px solid ${C.tape}`,display:"flex",justifyContent:"space-between",alignItems:"flex-start",background:C.paperDark}}>
+          <div>
+            <div className="mono" style={{fontSize:8,color:C.ghost,letterSpacing:".1em",marginBottom:2}}>DICA DE ETAPA</div>
+            <div style={{fontSize:13,fontWeight:700,color:C.ink,fontFamily:"'Playfair Display',serif"}}>{etapa.nome}</div>
+          </div>
+          <button onClick={onClose} className="del-btn" style={{fontSize:14}}>✕</button>
+        </div>
+        <div style={{padding:"14px 16px"}}>
+          <div style={{background:"#f5ead0",border:`1px solid ${C.ochreLight}`,borderLeft:`3px solid ${C.ochre}`,borderRadius:2,padding:"10px 12px",fontSize:12,color:C.ink,lineHeight:1.7,fontFamily:"'Lora',serif"}}>{dica}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Aba Etapas ───────────────────────────────────────────────────────────────
 function AbaEtapas({processo,onUpdate,readonly}){
   const [editId,setEditId]=useState(null); const [notaTemp,setNotaTemp]=useState("");
@@ -1747,7 +1826,6 @@ export default function App(){
 
       {showModal&&podeEditar&&<ModalProcesso onSave={async p=>{ await salvarProcesso(p); setShowModal(false); }} onClose={()=>setShowModal(false)} userId={user.id}/>}
       {showBusca&&<BuscaGlobal processos={processos} secretarias={secretarias} pessoas={pessoas} onSelect={(id)=>{abrirProcesso(id);setShowBusca(false);}} onVerOrgao={()=>{setTela("secretarias");setShowBusca(false);}} onVerPessoa={()=>{setTela("pessoas");setShowBusca(false);}} onClose={()=>setShowBusca(false)}/>}
-      {showBuscaDicas&&<BuscaDicas onClose={()=>setShowBuscaDicas(false)}/>}
       {showBuscaDicas&&<BuscaDicas onClose={()=>setShowBuscaDicas(false)}/>}
       {toast&&<Toast msg={toast}/>}
     </div>
