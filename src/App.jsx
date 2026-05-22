@@ -141,13 +141,110 @@ const MODAL_CODES = {
 };
 
 const ETAPAS_MOD = {
-  "Concorrência":["Estudo Técnico Preliminar (ETP)","Termo de Referência / Projeto Básico","Pesquisa de Preços","Elaboração do Edital","Publicação do Edital","Prazo de Impugnações","Sessão Pública de Abertura","Habilitação","Julgamento das Propostas","Recursos","Homologação","Assinatura do Contrato","Publicação do Contrato","Execução / Fiscalização","Encerramento"],
-  "Pregão":["Estudo Técnico Preliminar (ETP)","Termo de Referência","Pesquisa de Preços","Elaboração do Edital","Publicação do Edital","Prazo de Impugnações","Sessão Pública  --  Lances","Negociação","Habilitação","Recursos","Homologação","Assinatura do Contrato","Publicação do Contrato","Execução / Fiscalização","Encerramento"],
-  "Concurso":["Definição do Objeto","Elaboração do Regulamento","Publicação do Regulamento","Prazo de Inscrições","Avaliação das Obras/Propostas","Divulgação do Resultado","Recursos","Homologação","Premiação / Contratação","Encerramento"],
+  "Concorrência":[
+    "Ofício com DFD -- Secretaria Solicitante",
+    "Projetos de Engenharia",
+    "Planilha Orçamentária",
+    "CPU -- Composição de Preço Unitário",
+    "Planilha de Encargos Sociais",
+    "BDI",
+    "Cronograma Físico-Financeiro",
+    "ETP -- Estudo Técnico Preliminar",
+    "TR -- Termo de Referência",
+    "Autuação do Processo",
+    "Despacho para Dotação",
+    "Resposta da Dotação",
+    "Ofício ao Gestor de Licitação",
+    "Autorização Inicial e Adequação Orçamentária",
+    "Elaboração da Minuta do Edital",
+    "Despacho ao Jurídico",
+    "Parecer Jurídico Inicial",
+    "Elaboração do Edital",
+    "Ofício de Solicitação de Autorização para Publicação",
+    "Autorização para Publicar",
+    "Despacho ao Agente de Contratação",
+    "Portaria do Agente com Certificado Anexo",
+    "Edital Assinado",
+    "Aviso de Licitação",
+    "Publicação dos Avisos (Jornais, PNCP, GEO-Obras e Portal)",
+    "Abertura do Processo",
+    "Garantia da Proposta",
+    "Proposta Final do Vencedor",
+    "Despacho para Engenharia -- Análise da Proposta",
+    "Parecer Técnico da Proposta",
+    "Habilitação do Vencedor",
+    "Autenticidade das Certidões",
+    "Despacho para Engenharia -- Análise da Qualificação",
+    "Parecer Técnico da Habilitação",
+    "Fase de Recursos (se houver)",
+    "Atos de Recurso (se houver)",
+    "Ata Final Assinada",
+    "Vencedores da Concorrência",
+    "Recursos com Ata, Parecer e Despachos",
+    "Despacho ao Controle Interno",
+    "Parecer do Controle Interno",
+    "Adjudicação e Homologação no Sistema",
+    "Publicação da Homologação",
+    "Solicitação de Garantia Contratual ao Vencedor (10 dias úteis)",
+    "Solicitação de Inclusão no ASPEC e GEO-Obras",
+    "Solicitação de Designação de Fiscal de Contrato",
+    "Juntada da Garantia Contratual",
+    "Convocação para Assinatura do Contrato",
+    "Contrato Assinado pelo Vencedor e Ordenador",
+    "Publicação do Contrato (PNCP, GEO-Obras e Diário)",
+    "Despacho para Arquivo",
+    "Termo de Encerramento"
+  ],
+  "Pregão":[
+    "Ofício com DFD -- Secretaria Solicitante",
+    "ETP -- Estudo Técnico Preliminar",
+    "TR -- Termo de Referência",
+    "Pesquisa de Preços",
+    "Autuação do Processo",
+    "Dotação Orçamentária",
+    "Autorização Inicial",
+    "Elaboração da Minuta do Edital",
+    "Parecer Jurídico",
+    "Edital Assinado",
+    "Publicação do Edital",
+    "Sessão Pública de Lances",
+    "Negociação com o Primeiro Colocado",
+    "Habilitação do Vencedor",
+    "Fase de Recursos",
+    "Ata da Sessão Pública",
+    "Homologação",
+    "Contrato Assinado",
+    "Publicação do Contrato"
+  ],
+  "Concurso":["Definição do Objeto","Elaboração do Regulamento","Publicação do Regulamento","Prazo de Inscrições","Avaliação das Obras e Propostas","Divulgação do Resultado","Fase de Recursos","Homologação","Premiação e Contratação","Encerramento"],
   "Leilão":["Avaliação do Bem","Elaboração do Edital","Publicação do Edital","Sessão Pública de Lances","Arrematação","Pagamento","Transferência do Bem","Encerramento"],
-  "Diálogo Competitivo":["Estudo Técnico Preliminar (ETP)","Publicação do Edital de Chamamento","Fase de Diálogos","Convite para Propostas Finais","Recebimento de Propostas","Julgamento","Negociação Final","Habilitação","Recursos","Homologação","Assinatura do Contrato","Execução / Fiscalização","Encerramento"],
-  "Dispensa":["Capa","Solicitação","Autorização","Dotação Orçamentária","Justificativa da Contratação","Justificativa de Preço","Documentos do Fornecedor","Parecer Jurídico","Ratificação","Publicação no PNCP","Contrato / Empenho"],
-  "Inexigibilidade":["Capa","Solicitação","Autorização","Dotação Orçamentária","Justificativa de Inexigibilidade","Comprovação de Notória Especialização","Documentos do Fornecedor","Parecer Jurídico","Ratificação","Publicação no PNCP","Contrato / Empenho"],
+  "Diálogo Competitivo":["ETP -- Estudo Técnico Preliminar","Publicação do Edital de Chamamento","Fase de Diálogos com os Interessados","Convite para Propostas Finais","Recebimento de Propostas Finais","Julgamento das Propostas","Negociação Final","Habilitação do Vencedor","Fase de Recursos","Homologação","Assinatura do Contrato","Execução e Fiscalização","Encerramento"],
+  "Dispensa":[
+    "Capa do Processo Administrativo",
+    "Solicitação de Contratação Direta",
+    "Autorização para Abertura do Processo",
+    "Dotação Orçamentária",
+    "Justificativa da Contratação (art. 75 da Lei 14.133/2021)",
+    "Justificativa de Preço",
+    "Documentos de Habilitação do Fornecedor",
+    "Parecer Jurídico",
+    "Ratificação pelo Ordenador de Despesas",
+    "Publicação no PNCP",
+    "Contrato ou Empenho"
+  ],
+  "Inexigibilidade":[
+    "Capa do Processo Administrativo",
+    "Solicitação de Contratação Direta por Inexigibilidade",
+    "Autorização para Abertura do Processo",
+    "Dotação Orçamentária",
+    "Justificativa de Inexigibilidade (art. 74 da Lei 14.133/2021)",
+    "Comprovação de Notória Especialização",
+    "Documentos de Habilitação do Fornecedor",
+    "Parecer Jurídico",
+    "Ratificação pelo Ordenador de Despesas",
+    "Publicação no PNCP",
+    "Contrato ou Empenho"
+  ],
 };
 
 const FASES = {
@@ -1089,8 +1186,9 @@ function PopoverDica({doc,onClose,onSalvar,readonly}){
                   </div>
                 </div>
               ):(
-                <div style={{fontSize:12,color:doc.dicaCustom?C.ink:C.ghost,fontStyle:doc.dicaCustom?"normal":"italic",background:C.paperDark,border:`1px dashed ${C.tape}`,borderRadius:2,padding:"8px 10px",cursor:"pointer",fontFamily:"'Lora',serif",lineHeight:1.5}} onClick={()=>setEditando(true)}>
-                  {doc.dicaCustom||"＋ adicionar minha anotação…"}
+                <div style={{fontSize:12,color:doc.dicaCustom?C.ink:C.ghost,fontStyle:doc.dicaCustom?"normal":"italic",background:C.paperDark,border:`1px dashed ${C.tape}`,borderRadius:2,padding:"8px 10px",cursor:"pointer",fontFamily:"'Lora',serif",lineHeight:1.5,display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}} onClick={()=>setEditando(true)}>
+                  <span style={{flex:1}}>{doc.dicaCustom||"＋ clique aqui para adicionar sua anotação…"}</span>
+                  <span style={{fontSize:10,color:C.terra,flexShrink:0,fontFamily:"'Space Mono',monospace"}}>✎</span>
                 </div>
               )}
             </div>
