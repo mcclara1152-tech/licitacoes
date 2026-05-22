@@ -857,7 +857,7 @@ function AnexosDoc({doc,processoId,onUpdate,readonly}){
   }
   async function abrirAnexo(path){
     try{ const url=await supa.getAnexoSigned(path); window.open(url,"_blank"); }
-    catch(){ setErro("Erro ao abrir arquivo"); }
+    catch(e){ setErro("Erro ao abrir arquivo"); }
   }
   async function deletarAnexo(path){
     if(!confirm("Remover este anexo?")) return;
