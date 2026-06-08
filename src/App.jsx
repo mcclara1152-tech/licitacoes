@@ -1223,7 +1223,10 @@ function AbaEtapas({processo,onUpdate,readonly}){
     <div onTouchMove={e=>{ if(touchIdx.current===null) return; e.preventDefault(); const y=e.touches[0].clientY; const els=document.querySelectorAll('[data-erow]'); let cl=null,mn=999999; els.forEach((el,i)=>{ const r=el.getBoundingClientRect(); const d=Math.abs(y-(r.top+r.height/2)); if(d<mn){mn=d;cl=i;} }); setOverIdx(cl); }} onTouchEnd={()=>{ reorder(touchIdx.current,overIdx); touchIdx.current=null; setDragIdx(null); setOverIdx(null); }}>
       {processo.etapas.map((e,i)=>{
         const done=e.status==="concluída"; const isLast=i===processo.etapas.length-1;
-
+const vencido = e.prazo && !e.dataEntrega && new Date(e.prazo+"T12:00:00") < new Date();
+        const atrasado = e.prazo && e.dataEntrega && new Date(e.dataEntrega) > new Date(e.prazo+"T12:00:00");
+        return(
+          <div key={e.id} data-erow={i} draggable={!readonly}
         return(
           <div key={e.id} data-erow={i} draggable={!readonly}
             onDragStart={()=>{dFrom.current=i;setDragIdx(i);}} onDragEnter={()=>setOverIdx(i)}
