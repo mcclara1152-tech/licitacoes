@@ -43,6 +43,10 @@ const supa = {
     const data = await this.authReq("/signup", {email, password, data:{nome}});
     return data;
   },
+  async getDicas(){ return await this.req("/dicas?select=*&order=criado_em")||[]; },
+  async upsertDica(d){ return await this.req("/dicas",{method:"POST",body:JSON.stringify(d),headers:{"Prefer":"resolution=merge-duplicates,return=representation"}}); },
+  async updateDica(id,ch){ return await this.req(`/dicas?id=eq.${id}`,{method:"PATCH",body:JSON.stringify(ch)}); },
+  async deleteDica(id){ return await this.req(`/dicas?id=eq.${id}`,{method:"DELETE"}); },
   async signOut() {
     await this.authReq("/logout", {}, "POST").catch(()=>{});
     this._token=null; this._user=null;
@@ -398,6 +402,15 @@ const SUBTITULOS_DOC={
   "di11":"Formalização da contratação  --  contrato ou empenho conforme o valor",
 };
 
+// Função que combina dicas do código com dicas do banco (banco tem prioridade)
+function getDicaFinal(chave, dicasDB){
+  const dicaDB = dicasDB?.find(d=>d.chave===chave);
+  if(dicaDB) return {texto:dicaDB.texto, isCustom:true, id:dicaDB.id};
+  const texto = DICAS_PADRAO[chave]||DICAS_ETAPAS[chave];
+  if(texto) return {texto, isCustom:false, id:null};
+  return null;
+}
+
 const DICAS_PADRAO={
   "d1":"O órgão solicitante é quem assina o DFD. Identifique a secretaria que demanda a obra ou serviço  --  use o nome completo da secretaria e o nome do responsável que vai assinar. Ex: 'Secretaria Municipal de Infraestrutura  --  Fulano de Tal'.",
   "d2":"Inclua TODOS os projetos exigidos para o tipo de obra: arquitetônico, estrutural, elétrico, hidrossanitário, de fundações, etc. Verifique as resoluções do CONFEA/CAU para a lista completa. Todos devem estar assinados pelo responsável técnico com ART/RRT recolhida.",
@@ -714,6 +727,176 @@ function TelaLogin({onLogin}){
   );
 }
 
+// ─── Gestão de Dicas ──────────────────────────────────────────────────────────
+function GestaoDicas({dicasDB,onUpdate,perfil,processos}){
+  const [showForm,setShowForm]=useState(false);
+  const [editId,setEditId]=useState(null);
+  const [filtroTipo,setFiltroTipo]=useState("todas");
+  const [busca,setBusca]=useState("");
+  const blank={tipo:"documento",chave:"",texto:""};
+  const [form,setForm]=useState(blank);
+  const podeEditar=perfil==="admin"||perfil==="editor";
+
+  // Lista de chaves disponíveis para associar dicas
+  const chavesDoc=Object.entries(DICAS_PADRAO).map(([k,v])=>({k,preview:v.slice(0,40)+"..."}));
+  const chavesEtapa=Object.entries(DICAS_ETAPAS).map(([k,v])=>({k,preview:v.slice(0,40)+"..."}));
+
+  async function salvar(){
+    if(!form.chave.trim()||!form.texto.trim()) return;
+    const payload={tipo:form.tipo,chave:form.chave.trim(),texto:form.texto.trim()};
+    if(editId){
+      await supa.updateDica(editId,{texto:form.texto.trim(),atualizado_em:new Date().toISOString()});
+    } else {
+      await supa.upsertDica({...payload,id:undefined});
+    }
+    await onUpdate();
+    setForm(blank); setShowForm(false); setEditId(null);
+  }
+
+  async function excluir(id){
+    if(!confirm("Excluir esta dica?")) return;
+    await supa.deleteDica(id);
+    await onUpdate();
+  }
+
+  function editar(d){
+    setForm({tipo:d.tipo,chave:d.chave,texto:d.texto});
+    setEditId(d.id); setShowForm(true);
+  }
+
+  const dicasFiltradas=dicasDB
+    .filter(d=>filtroTipo==="todas"||d.tipo===filtroTipo)
+    .filter(d=>!busca||d.chave.toLowerCase().includes(busca.toLowerCase())||d.texto.toLowerCase().includes(busca.toLowerCase()));
+
+  // Dicas padrão para exibição
+  const dicasPadrao=[
+    ...Object.entries(DICAS_PADRAO).map(([k,v])=>({chave:k,texto:v,tipo:"documento",isPadrao:true})),
+    ...Object.entries(DICAS_ETAPAS).map(([k,v])=>({chave:k,texto:v,tipo:"etapa",isPadrao:true})),
+  ].filter(d=>!busca||d.chave.toLowerCase().includes(busca.toLowerCase())||d.texto.toLowerCase().includes(busca.toLowerCase()))
+   .filter(d=>filtroTipo==="todas"||d.tipo===filtroTipo)
+   .filter(d=>!dicasDB.find(db=>db.chave===d.chave));
+
+  return(
+    <div style={{maxWidth:920,margin:"0 auto",padding:"20px 16px 56px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:10}}>
+        <div>
+          <div className="mono" style={{fontSize:9,color:C.ghost,letterSpacing:".12em",marginBottom:2}}>BANCO DE DICAS</div>
+          <div style={{fontSize:11,color:C.faded,fontFamily:"'Lora',serif"}}>
+            {dicasDB.length} dica{dicasDB.length!==1?"s":""} personalizadas · {Object.keys(DICAS_PADRAO).length+Object.keys(DICAS_ETAPAS).length} dicas padrão
+          </div>
+        </div>
+        {podeEditar&&<button className="btn-primary" onClick={()=>{setForm(blank);setEditId(null);setShowForm(true);}}>+ NOVA DICA</button>}
+      </div>
+
+      {/* Filtros */}
+      <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
+        <input value={busca} onChange={e=>setBusca(e.target.value)} placeholder="buscar dicas..."
+          style={{flex:1,minWidth:160,border:`1px solid ${C.tape}`,borderRadius:2,padding:"6px 10px",fontSize:11,background:C.paper,outline:"none",fontFamily:"'Space Mono',monospace"}}/>
+        {["todas","documento","etapa"].map(t=>(
+          <button key={t} onClick={()=>setFiltroTipo(t)} className="mono"
+            style={{background:filtroTipo===t?C.terra:C.paperDark,color:filtroTipo===t?"white":C.faded,
+              border:`1px solid ${filtroTipo===t?C.terra:C.tape}`,borderRadius:2,padding:"6px 12px",fontSize:9,cursor:"pointer",letterSpacing:".08em"}}>
+            {t.toUpperCase()}
+          </button>
+        ))}
+      </div>
+
+      {/* Formulário */}
+      {showForm&&podeEditar&&(
+        <div className="fade-up" style={{background:C.paperDark,border:`1px solid ${C.tape}`,borderTop:`3px solid ${C.terra}`,borderRadius:2,padding:18,marginBottom:18,boxShadow:`3px 3px 0 ${C.tape}`}}>
+          <div className="mono" style={{fontSize:9,fontWeight:700,color:C.faded,letterSpacing:".1em",marginBottom:14}}>{editId?"EDITAR DICA":"NOVA DICA"}</div>
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            {!editId&&(
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                <div>
+                  <label className="lbl">TIPO</label>
+                  <select value={form.tipo} onChange={e=>setForm(p=>({...p,tipo:e.target.value,chave:""}))} className="field">
+                    <option value="documento">Documento</option>
+                    <option value="etapa">Etapa</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="lbl">ASSOCIAR A</label>
+                  <select value={form.chave} onChange={e=>setForm(p=>({...p,chave:e.target.value}))} className="field">
+                    <option value="">Selecionar ou digitar abaixo...</option>
+                    {(form.tipo==="documento"?chavesDoc:chavesEtapa).map(({k,preview})=>(
+                      <option key={k} value={k}>{k} -- {preview}</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{gridColumn:"1/-1"}}>
+                  <label className="lbl">OU DIGITAR A CHAVE MANUALMENTE</label>
+                  <input value={form.chave} onChange={e=>setForm(p=>({...p,chave:e.target.value}))} className="field"
+                    placeholder="Ex: d15 (para doc) ou nome da etapa"/>
+                </div>
+              </div>
+            )}
+            <div>
+              <label className="lbl">TEXTO DA DICA</label>
+              <textarea value={form.texto} onChange={e=>setForm(p=>({...p,texto:e.target.value}))} className="field"
+                rows={4} style={{resize:"vertical"}} placeholder="Escreva a dica aqui..."/>
+            </div>
+          </div>
+          <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:12}}>
+            <button className="btn-ghost" onClick={()=>{setShowForm(false);setEditId(null);}}>CANCELAR</button>
+            <button className="btn-primary" onClick={salvar}>{editId?"SALVAR":"CRIAR"}</button>
+          </div>
+        </div>
+      )}
+
+      {/* Dicas personalizadas */}
+      {dicasFiltradas.length>0&&(
+        <div style={{marginBottom:24}}>
+          <div className="mono" style={{fontSize:9,color:C.terra,fontWeight:700,letterSpacing:".1em",marginBottom:10,display:"flex",alignItems:"center",gap:8}}>
+            DICAS PERSONALIZADAS <span style={{height:1,flex:1,background:`${C.terra}44`,display:"inline-block"}}/>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {dicasFiltradas.map(d=>(
+              <div key={d.id} style={{background:C.paper,border:`1px solid ${C.tape}`,borderLeft:`3px solid ${C.terra}`,borderRadius:2,padding:"12px 14px"}}>
+                <div style={{display:"flex",gap:8,alignItems:"flex-start",marginBottom:6}}>
+                  <span className="mono" style={{fontSize:8,background:`${C.terra}22`,color:C.terra,padding:"1px 6px",borderRadius:2,flexShrink:0}}>{d.tipo.toUpperCase()}</span>
+                  <span className="mono" style={{fontSize:9,fontWeight:700,color:C.ink,flex:1}}>{d.chave}</span>
+                  {podeEditar&&<div style={{display:"flex",gap:4}}>
+                    <button className="btn-ghost btn-sm" onClick={()=>editar(d)}>✎</button>
+                    <button className="del-btn" onClick={()=>excluir(d.id)}>✕</button>
+                  </div>}
+                </div>
+                <div style={{fontSize:11,color:C.faded,fontFamily:"'Lora',serif",lineHeight:1.6}}>{d.texto}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Dicas padrão */}
+      {dicasPadrao.length>0&&(
+        <div>
+          <div className="mono" style={{fontSize:9,color:C.ghost,fontWeight:700,letterSpacing:".1em",marginBottom:10,display:"flex",alignItems:"center",gap:8}}>
+            DICAS PADRÃO DO SISTEMA <span style={{height:1,flex:1,background:C.tape,display:"inline-block"}}/>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {dicasPadrao.slice(0,busca?dicasPadrao.length:5).map((d,i)=>(
+              <div key={i} style={{background:C.paperDark,border:`1px solid ${C.tape}`,borderRadius:2,padding:"10px 14px"}}>
+                <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:4}}>
+                  <span className="mono" style={{fontSize:8,background:C.paperDeep,color:C.ghost,padding:"1px 6px",borderRadius:2,flexShrink:0}}>{d.tipo.toUpperCase()}</span>
+                  <span className="mono" style={{fontSize:9,fontWeight:700,color:C.faded,flex:1}}>{d.chave}</span>
+                  {podeEditar&&<button className="btn-ghost btn-sm" onClick={()=>{setForm({tipo:d.tipo,chave:d.chave,texto:d.texto});setEditId(null);setShowForm(true);}}>✎ PERSONALIZAR</button>}
+                </div>
+                <div style={{fontSize:11,color:C.ghost,fontFamily:"'Lora',serif",lineHeight:1.5}}>{d.texto.slice(0,120)}...</div>
+              </div>
+            ))}
+            {!busca&&dicasPadrao.length>5&&<div className="mono" style={{fontSize:9,color:C.ghost,textAlign:"center",padding:"8px 0"}}>... e mais {dicasPadrao.length-5} dicas padrão. Use a busca para encontrar.</div>}
+          </div>
+        </div>
+      )}
+
+      {dicasFiltradas.length===0&&dicasPadrao.length===0&&busca&&(
+        <div className="mono" style={{textAlign:"center",padding:"40px",color:C.ghost,fontSize:10}}>// NENHUMA DICA ENCONTRADA</div>
+      )}
+    </div>
+  );
+}
+
 // ─── Gestão de Usuários (admin) ───────────────────────────────────────────────
 function GestaoUsuarios({perfis,meuPerfil,onUpdate}){
   const PERFIL_CORES={admin:{bg:"#f0dcd8",color:C.rust,border:"#c07060"},editor:{bg:"#f5ead0",color:C.ochre,border:C.ochreLight},visualizador:{bg:"#ede4d0",color:C.ghost,border:C.tape}};
@@ -1024,7 +1207,15 @@ function AbaEtapas({processo,onUpdate,readonly}){
   const [editNomeId,setEditNomeId]=useState(null);
   const [nomeTemp,setNomeTemp]=useState("");
   const dFrom=useRef(null); const touchIdx=useRef(null);
-  function up(id,ch){ if(readonly) return; onUpdate({etapas:processo.etapas.map(e=>e.id===id?{...e,...ch}:e)}); }
+  function up(id,ch){ 
+    if(readonly&&!('dataEntrega' in ch)) return; 
+    const etapa=processo.etapas.find(e=>e.id===id);
+    // Auto-preencher data de registro quando status muda para concluída
+    const autoData=ch.status==="concluída"&&!etapa?.dataEntrega?{dataEntrega:new Date().toISOString().split("T")[0]}:{};
+    const novasEtapas=processo.etapas.map(e=>e.id===id?{...e,...ch,...autoData}:e);
+    const desc=ch.status?`Etapa "${etapa?.nome}" marcada como ${ch.status.toUpperCase()}`:ch.nome?`Etapa renomeada para "${ch.nome}"`:null;
+    onUpdate({etapas:novasEtapas,...(desc?{_historico:desc}:{})});
+  }
   function del(id){ if(readonly) return; onUpdate({etapas:processo.etapas.filter(e=>e.id!==id)}); }
   function add(){ if(!addNome.trim()||readonly) return; onUpdate({etapas:[...processo.etapas,{id:mkId(),nome:addNome.trim(),status:"pendente",prazo:"",dataEntrega:"",nota:""}]}); setAddNome(""); setShowAdd(false); }
   function reorder(from,to){ if(from===null||to===null||from===to||readonly) return; const arr=[...processo.etapas]; const [m]=arr.splice(from,1); arr.splice(to,0,m); onUpdate({etapas:arr}); }
@@ -1032,8 +1223,7 @@ function AbaEtapas({processo,onUpdate,readonly}){
     <div onTouchMove={e=>{ if(touchIdx.current===null) return; e.preventDefault(); const y=e.touches[0].clientY; const els=document.querySelectorAll('[data-erow]'); let cl=null,mn=999999; els.forEach((el,i)=>{ const r=el.getBoundingClientRect(); const d=Math.abs(y-(r.top+r.height/2)); if(d<mn){mn=d;cl=i;} }); setOverIdx(cl); }} onTouchEnd={()=>{ reorder(touchIdx.current,overIdx); touchIdx.current=null; setDragIdx(null); setOverIdx(null); }}>
       {processo.etapas.map((e,i)=>{
         const done=e.status==="concluída"; const isLast=i===processo.etapas.length-1;
-        const vencido=e.prazo&&!e.dataEntrega&&new Date(e.prazo+"T12:00:00")<new Date();
-        const atrasado=e.prazo&&e.dataEntrega&&new Date(e.dataEntrega)>new Date(e.prazo);
+
         return(
           <div key={e.id} data-erow={i} draggable={!readonly}
             onDragStart={()=>{dFrom.current=i;setDragIdx(i);}} onDragEnter={()=>setOverIdx(i)}
@@ -1068,9 +1258,8 @@ function AbaEtapas({processo,onUpdate,readonly}){
                 )}
               </div>
               <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",marginBottom:3}}>
-                <DateField label="PRAZO" value={e.prazo} onChange={v=>up(e.id,{prazo:v})} readonly={readonly}/>
-                <DateField label="ENTREGUE" value={e.dataEntrega} onChange={v=>up(e.id,{dataEntrega:v})} readonly={readonly}/>
-                {vencido&&<span className="mono" style={{fontSize:8,color:C.rust,fontWeight:700}}>⚠ VENCIDO</span>}
+                <DateField label="DATA DOC." value={e.prazo} onChange={v=>up(e.id,{prazo:v})} readonly={readonly}/>
+                <DateField label="REGISTRO" value={e.dataEntrega||""} onChange={v=>up(e.id,{dataEntrega:v})} readonly={false}/>
                 {atrasado&&<span className="mono" style={{fontSize:8,color:C.rust,fontWeight:700}}>⚠ ATRASO</span>}
               </div>
               {editId===e.id?(
@@ -1417,6 +1606,35 @@ function AbaFluxo({processo,onUpdate,readonly}){
   );
 }
 
+// ─── Aba Histórico ───────────────────────────────────────────────────────────
+function AbaHistorico({processo}){
+  const historico=[...(processo.historico||[])].reverse();
+  if(historico.length===0) return(
+    <div style={{padding:24,textAlign:"center"}}>
+      <div className="mono" style={{fontSize:9,color:C.ghost,letterSpacing:".1em"}}>// NENHUMA ALTERAÇÃO REGISTRADA</div>
+    </div>
+  );
+  return(
+    <div style={{padding:"16px"}}>
+      <div className="mono" style={{fontSize:9,color:C.faded,letterSpacing:".1em",marginBottom:12}}>// HISTÓRICO DE ALTERAÇÕES</div>
+      <div style={{display:"flex",flexDirection:"column",gap:6}}>
+        {historico.map((h,i)=>(
+          <div key={i} style={{display:"flex",gap:12,alignItems:"flex-start",padding:"8px 10px",background:i===0?`${C.sage}15`:C.paperDark,border:`1px solid ${C.tape}`,borderLeft:`3px solid ${i===0?C.sage:C.tape}`,borderRadius:2}}>
+            <div style={{flexShrink:0}}>
+              <div className="mono" style={{fontSize:8,color:C.ghost}}>{new Date(h.at).toLocaleDateString("pt-BR")}</div>
+              <div className="mono" style={{fontSize:8,color:C.ghost}}>{new Date(h.at).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</div>
+            </div>
+            <div style={{flex:1}}>
+              <div className="mono" style={{fontSize:9,color:C.terra,fontWeight:700,marginBottom:2}}>{h.por}</div>
+              <div style={{fontSize:11,color:C.faded,fontFamily:"'Lora',serif"}}>{h.desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Aba Órgãos Processo ─────────────────────────────────────────────────────
 function AbaOrgaosProc({processo,secretarias,onUpdate,readonly}){
   const vinc=(secretarias||[]).filter(s=>(processo.secretarias_ids||[]).includes(s.id));
@@ -1515,7 +1733,7 @@ function TelaProcesso({processo,secretarias,onUpdate,perfil}){
         </div>
       </div>
       <div className="tab-row" style={{maxWidth:920,margin:"0 auto",width:"100%"}}>
-        {[["etapas","01 // ETAPAS"],["documentos","02 // DOCUMENTOS"],["fluxo","03 // FLUXO"],["orgaos","04 // ÓRGÃOS"],["pessoas","05 // PESSOAS"]].map(([k,l])=>(
+        {[["etapas","01 // ETAPAS"],["documentos","02 // DOCUMENTOS"],["fluxo","03 // FLUXO"],["orgaos","04 // ÓRGÃOS"],["pessoas","05 // PESSOAS"],["historico","06 // HISTÓRICO"]].map(([k,l])=>(
           <button key={k} className={`tab-item${aba===k?" active":""}`} onClick={()=>setAba(k)}>{l}</button>
         ))}
       </div>
@@ -1525,6 +1743,7 @@ function TelaProcesso({processo,secretarias,onUpdate,perfil}){
         {aba==="fluxo"&&<AbaFluxo processo={processo} onUpdate={onUpdate} readonly={readonly}/>}
         {aba==="orgaos"&&<AbaOrgaosProc processo={processo} secretarias={secretarias} onUpdate={onUpdate} readonly={readonly}/>}
         {aba==="pessoas"&&<AbaPessoasProc processo={processo} pessoas={secretarias.filter(s=>s.tipo==="pessoa")} onUpdate={onUpdate} readonly={readonly}/>}
+        {aba==="historico"&&<AbaHistorico processo={processo}/>}
       </div>
       {showEdit&&!readonly&&<ModalProcesso processo={processo} onSave={onUpdate} onClose={()=>setShowEdit(false)}/>}
     </div>
@@ -1736,6 +1955,7 @@ export default function App(){
   const [processos,setProcessos]=useState([]);
   const [secretarias,setSecretarias]=useState([]);
   const [pessoas,setPessoas]=useState([]);
+  const [dicasDB,setDicasDB]=useState([]);
   const [loading,setLoading]=useState(true);
   const [tela,setTela]=useState("dashboard");
   const [processoId,setProcessoId]=useState(null);
@@ -1764,13 +1984,57 @@ export default function App(){
 
   async function carregarDados(u){
     try{
-      const [p,s,pf,pfs]=await Promise.all([supa.getProcessos(),supa.getSecretarias(),supa.getPerfil(u.id),supa.getPerfis()]);
-      setProcessos(p||[]); setSecretarias((s||[]).filter(x=>x.tipo!=="pessoa")); setPessoas((s||[]).filter(x=>x.tipo==="pessoa")); setPerfil(pf); setPerfis(pfs||[]);
+      const [p,s,pf,pfs,dc]=await Promise.all([supa.getProcessos(),supa.getSecretarias(),supa.getPerfil(u.id),supa.getPerfis(),supa.getDicas()]);
+      setProcessos(p||[]); setSecretarias((s||[]).filter(x=>x.tipo!=="pessoa")); setPessoas((s||[]).filter(x=>x.tipo==="pessoa")); setPerfil(pf); setPerfis(pfs||[]); setDicasDB(dc||[]);
     }catch(e){ showToast("⚠ Erro ao carregar: "+e.message); }
   }
 
   async function handleLogin(u){ setUser(u); await carregarDados(u); }
   async function handleLogout(){ await supa.signOut(); setUser(null);setPerfil(null);setProcessos([]);setSecretarias([]);setTela("dashboard"); }
+
+  function registrarHistorico(proc, descricao){
+    const h={at:new Date().toISOString(),por:perfil?.nome||user?.email?.split("@")[0],desc:descricao};
+    return {...proc,historico:[...(proc.historico||[]),h].slice(-50)};
+  }
+
+  function exportarProcesso(proc){
+    const mc=MODALIDADE_CONFIG[proc.modalidade]||MODALIDADE_CONFIG["Concorrência"];
+    const etapasConcluidas=proc.etapas.filter(e=>e.status==="concluída");
+    const etapasPendentes=proc.etapas.filter(e=>e.status!=="concluída");
+    const docsConcluidos=proc.docs.filter(d=>d.status==="entregue");
+    const linhas=[
+      "LICITAÇÕES -- LEI 14.133/2021",
+      "RESUMO DO PROCESSO",
+      "=".repeat(60),
+      "",
+      `OBJETO: ${proc.objeto||proc.nome}`,
+      `MODALIDADE: ${proc.modalidade}`,
+      proc.numero_licitacao?`Nº DA LICITAÇÃO: ${proc.numero_licitacao}`:"",
+      proc.numero?`Nº DO PROCESSO: ${proc.numero}`:"",
+      proc.data_inicio?`INÍCIO: ${proc.data_inicio}`:"",
+      proc.data_prazo?`PRAZO: ${proc.data_prazo}`:"",
+      proc.obs_geral?`
+OBSERVAÇÕES: ${proc.obs_geral}`:"",
+      "",
+      "=".repeat(60),
+      `PROGRESSO: ${etapasConcluidas.length}/${proc.etapas.length} etapas concluídas`,
+      `DOCUMENTOS: ${docsConcluidos.length}/${proc.docs.length} entregues`,
+      "",
+      "ETAPAS CONCLUÍDAS:",
+      ...etapasConcluidas.map(e=>`  ✓ ${e.nome}${e.dataEntrega?" ("+e.dataEntrega+")":""}`),
+      "",
+      "ETAPAS PENDENTES:",
+      ...etapasPendentes.map(e=>`  ○ ${e.nome}${e.prazo?" -- prazo: "+e.prazo:""}`),
+      "",
+      "=".repeat(60),
+      `Exportado em: ${new Date().toLocaleString("pt-BR")}`,
+    ].filter(l=>l!==null);
+    const blob=new Blob([linhas.join('\n')],{type:'text/plain;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url; a.download=`processo-${(proc.numero_licitacao||proc.numero||proc.id).replace(/[/]/g,'-')}.txt`;
+    a.click(); URL.revokeObjectURL(url);
+  }
 
   async function salvarProcesso(p){
     if(perfil?.perfil==="visualizador") return;
@@ -1804,8 +2068,8 @@ export default function App(){
   const aberto=processoId?processos.find(p=>p.id===processoId):null;
   const podeEditar=perfil?.perfil==="admin"||perfil?.perfil==="editor";
   const isAdmin=perfil?.perfil==="admin";
-  const NAV=[{key:"dashboard",label:"LOG"},{key:"processos",label:`ARQUIVOS (${processos.length})`},{key:"secretarias",label:"ÓRGÃOS"},{key:"pessoas",label:"PESSOAS"},...(isAdmin?[{key:"usuarios",label:"USUÁRIOS"}]:[])];
-  const BNAV=[{key:"dashboard",icon:"⊞",label:"LOG"},{key:"processos",icon:"⚖",label:"ARQUIVOS"},{key:"secretarias",icon:"🏛",label:"ÓRGÃOS"},{key:"pessoas",icon:"👤",label:"PESSOAS"},...(isAdmin?[{key:"usuarios",icon:"👥",label:"USUÁRIOS"}]:[])];
+  const NAV=[{key:"dashboard",label:"LOG"},{key:"processos",label:`ARQUIVOS (${processos.length})`},{key:"secretarias",label:"ÓRGÃOS"},{key:"pessoas",label:"PESSOAS"},...(isAdmin?[{key:"usuarios",label:"USUÁRIOS"},{key:"dicas",label:"DICAS"}]:[])];
+  const BNAV=[{key:"dashboard",icon:"⊞",label:"LOG"},{key:"processos",icon:"⚖",label:"ARQUIVOS"},{key:"secretarias",icon:"🏛",label:"ÓRGÃOS"},{key:"pessoas",icon:"👤",label:"PESSOAS"},...(isAdmin?[{key:"usuarios",icon:"👥",label:"USUÁRIOS"},{key:"dicas",icon:"💡",label:"DICAS"}]:[])];
 
   return(
     <div className="shell">
@@ -1836,6 +2100,7 @@ export default function App(){
             💡
           </button>
           {salvando&&<span className="mono" style={{fontSize:8,color:C.ghost,padding:"0 4px"}}>SALVANDO…</span>}
+          {(()=>{const urgentes=processos.filter(p=>{if(!p.data_prazo||isConcluido(p)) return false; const d=Math.ceil((new Date(p.data_prazo+"T12:00:00")-new Date())/(1000*60*60*24)); return d<=7;}); return urgentes.length>0?(<button onClick={()=>setTela("processos")} title={`${urgentes.length} processo(s) com prazo vencendo`} style={{background:C.rust,border:"none",borderRadius:"50%",width:20,height:20,color:"white",fontFamily:"'Space Mono',monospace",fontSize:9,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{urgentes.length}</button>):null;})()}
           {podeEditar&&<button className="btn-primary" onClick={()=>setShowModal(true)} style={{fontSize:11,padding:"8px 18px",letterSpacing:".12em"}}>+ NOVO</button>}
           <div style={{width:1,height:20,background:"rgba(255,255,255,.1)",margin:"0 2px"}}/>
           <button onClick={handleLogout}
@@ -1871,7 +2136,7 @@ export default function App(){
           </div>
           {[
             {key:"dashboard",icon:"⊞",label:"LOG"},
-            {key:"processos",icon:"⚖",label:`ARQUIVOS (${processos.length})`},
+            {key:"processos",icon:"⚖",label:`ARQUIVOS (${processos.length})`,...(processos.filter(p=>p.data_prazo&&!isConcluido(p)&&Math.ceil((new Date(p.data_prazo+"T12:00:00")-new Date())/(1000*60*60*24))<=7).length>0?{badge:processos.filter(p=>p.data_prazo&&!isConcluido(p)&&Math.ceil((new Date(p.data_prazo+"T12:00:00")-new Date())/(1000*60*60*24))<=7).length}:{})},
             {key:"secretarias",icon:"🏛",label:"ÓRGÃOS"},
             {key:"pessoas",icon:"👤",label:"PESSOAS"},
             ...(isAdmin?[{key:"usuarios",icon:"👥",label:"USUÁRIOS"}]:[]),
@@ -1902,6 +2167,7 @@ export default function App(){
           {tela==="secretarias"&&<AgendaSecretarias secretarias={secretarias} onUpdate={()=>supa.getSecretarias().then(s=>{setSecretarias((s||[]).filter(x=>x.tipo!=="pessoa"));setPessoas((s||[]).filter(x=>x.tipo==="pessoa"));})} perfil={perfil?.perfil}/>}
           {tela==="pessoas"&&<AgendaPessoas pessoas={pessoas} onUpdate={()=>supa.getSecretarias().then(s=>{setSecretarias((s||[]).filter(x=>x.tipo!=="pessoa"));setPessoas((s||[]).filter(x=>x.tipo==="pessoa"));})} perfil={perfil?.perfil}/>}
           {tela==="usuarios"&&isAdmin&&<GestaoUsuarios perfis={perfis} meuPerfil={perfil} onUpdate={()=>supa.getPerfis().then(p=>setPerfis(p||[]))}/>}
+          {tela==="dicas"&&isAdmin&&<GestaoDicas dicasDB={dicasDB} perfil={perfil?.perfil} onUpdate={()=>supa.getDicas().then(d=>setDicasDB(d||[]))} processos={processos}/>}
           {tela==="processo"&&aberto&&(
             <TelaProcesso processo={aberto} secretarias={secretarias}
               onUpdate={ch=>{ const atualizado={...aberto,...ch}; setProcessos(prev=>prev.map(p=>p.id===aberto.id?atualizado:p)); salvarProcesso(atualizado); }}
