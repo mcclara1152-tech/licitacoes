@@ -5,7 +5,7 @@ const SUPA_URL = "https://uhhgqzngkzruvxpyaxmr.supabase.co";
 const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGdxem5na3pydXZ4cHlheG1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MDY5ODEsImV4cCI6MjA5NDE4Mjk4MX0.NiJ9uji5MLeQJCiO-GMCQcJmGvqBGgxlTGtACA29t7o";
 
 const supa = {
-  async req(path, opts={}) {
+  async req(path, opts={}) { 
     const r = await fetch(`${SUPA_URL}/rest/v1${path}`, {
       ...opts,
       headers: {
