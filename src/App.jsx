@@ -1227,8 +1227,6 @@ const vencido = e.prazo && !e.dataEntrega && new Date(e.prazo+"T12:00:00") < new
         const atrasado = e.prazo && e.dataEntrega && new Date(e.dataEntrega) > new Date(e.prazo+"T12:00:00");
         return(
           <div key={e.id} data-erow={i} draggable={!readonly}
-        return(
-          <div key={e.id} data-erow={i} draggable={!readonly}
             onDragStart={()=>{dFrom.current=i;setDragIdx(i);}} onDragEnter={()=>setOverIdx(i)}
             onDragEnd={()=>{reorder(dFrom.current,overIdx);dFrom.current=null;setDragIdx(null);setOverIdx(null);}} onDragOver={ev=>ev.preventDefault()}
             style={{display:"grid",gridTemplateColumns:`${readonly?"":"24px "}28px 1fr auto`,gap:8,padding:"10px 14px 10px 8px",
