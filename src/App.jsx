@@ -1214,14 +1214,14 @@ const CHECKLIST_HABILITACAO = [
   {
     id:"fiscal",label:"2. Habilitação Fiscal, Social e Trabalhista",
     itens:[
-      {id:"f1",texto:<span>CNPJ e QSA — autenticidade verificada na <a href="https://solucoes.receita.fazenda.gov.br/Servicos/cnpjreva/qsa" target="_blank" rel="noreferrer" style={{color:C.sage}}>Receita Federal</a></span>},
-      {id:"f2",texto:<span>CND Federal (PGFN + RFB) — validade máx. 90 dias — <a href="https://servicos.receitafederal.gov.br/servico/certidoes" target="_blank" rel="noreferrer" style={{color:C.sage}}>verificar autenticidade</a></span>},
-      {id:"f3",texto:<span>CRF — Certificado de Regularidade do FGTS — <a href="https://consulta-crf.caixa.gov.br/consultacrf/pages/consultaEmpregador.jsf" target="_blank" rel="noreferrer" style={{color:C.sage}}>verificar autenticidade</a></span>},
-      {id:"f4",texto:<span>CNDT — Certidão Negativa de Débitos Trabalhistas — <a href="https://cndt-certidao.tst.jus.br/inicio.faces" target="_blank" rel="noreferrer" style={{color:C.sage}}>verificar autenticidade</a></span>},
-      {id:"f5",texto:"Inscrição no cadastro de contribuintes Municipal"},
-      {id:"f6",texto:"CND Municipal do domicílio/sede"},
-      {id:"f7",texto:<span>CND Estadual PA (se apresentada, autenticidade obrigatória) — <a href="https://app.sefa.pa.gov.br/autenticidade-certidoes/consultaCertidao.do" target="_blank" rel="noreferrer" style={{color:C.sage}}>verificar autenticidade</a></span>},
-      {id:"f8",texto:"Certidão negativa de falência — emitida em até 90 dias antes da abertura"},
+      {id:"f1",texto:<span>CNPJ e QSA — autenticidade verificada na <a href="https://solucoes.receita.fazenda.gov.br/Servicos/cnpjreva/qsa" target="_blank" rel="noreferrer" style={{color:C.sage}}>Receita Federal</a></span>,obs:"Verifique o CNPJ e o Quadro de Sócios e Administradores (QSA). Confira se o CNPJ está ativo e se os sócios correspondem ao contrato social apresentado."}, 
+      {id:"f2",texto:<span>CND Federal (PGFN + RFB) — validade máx. 90 dias — <a href="https://servicos.receitafederal.gov.br/servico/certidoes" target="_blank" rel="noreferrer" style={{color:C.sage}}>verificar autenticidade</a></span>,obs:"Certidão conjunta referente a todos os créditos tributários federais, Dívida Ativa da União e Seguridade Social (Portaria Conjunta nº 1.751/2014). Validade: somente aceita se emitida em até 90 dias antes da abertura."}
+      {id:"f3",texto:<span>CRF — Certificado de Regularidade do FGTS — <a href="https://consulta-crf.caixa.gov.br/consultacrf/pages/consultaEmpregador.jsf" target="_blank" rel="noreferrer" style={{color:C.sage}}>verificar autenticidade</a></span>,obs:"Verifique a regularidade e o histórico do empregador. Certifique-se de que o CNPJ consultado é o mesmo da empresa licitante."},
+      {id:"f4",texto:<span>CNDT — Certidão Negativa de Débitos Trabalhistas — <a href="https://cndt-certidao.tst.jus.br/inicio.faces" target="_blank" rel="noreferrer" style={{color:C.sage}}>verificar autenticidade</a></span>,obs:"Certidão emitida pelo TST. Aceita certidão negativa ou positiva com efeito de negativa (Decreto-Lei nº 5.452/43, Título VII-A)."},
+      {id:"f5",texto:"Inscrição no cadastro de contribuintes Municipal",obs:"Prova de inscrição no cadastro municipal relativa ao domicílio/sede do fornecedor, compatível com o objeto contratado. Verificar autenticidade."},
+      {id:"f6",texto:"CND Municipal do domicílio/sede",obs:"Prova de regularidade com a Fazenda Municipal do domicílio/sede do fornecedor. Verificar autenticidade via QR code ou código de validação."},
+      {id:"f7",texto:<span>CND Estadual PA (se apresentada, autenticidade obrigatória) — <a href="https://app.sefa.pa.gov.br/autenticidade-certidoes/consultaCertidao.do" target="_blank" rel="noreferrer" style={{color:C.sage}}>verificar autenticidade</a></span>,obs:"Optativa — não exigida no TR, mas se a empresa apresentar, a verificação de autenticidade é obrigatória."},
+      {id:"f8",texto:"Certidão negativa de falência — emitida em até 90 dias antes da abertura",obs:"Expedida pelo distribuidor da sede do fornecedor (art. 69, caput, II — Lei 14.133/2021). Verificar autenticidade via QR code ou código impresso na certidão. Validade: emitida em até 90 dias antes da abertura (item 8.23)."},
     ]
   },
   {
