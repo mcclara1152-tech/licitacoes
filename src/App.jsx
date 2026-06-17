@@ -1261,7 +1261,23 @@ const CHECKLIST_HABILITACAO = [
     ]
   },
 ];
-
+function ChecklistItem({item,checked,onToggle}){
+  const [showObs,setShowObs]=useState(false);
+  return(
+    <div style={{background:checked?`${C.sage}15`:C.paperDark,border:`1px solid ${checked?C.sage:C.tape}`,borderRadius:2,transition:"all .15s"}}>
+      <div style={{display:"flex",gap:10,alignItems:"flex-start",padding:"6px 8px",cursor:"pointer"}} onClick={onToggle}>
+        <input type="checkbox" checked={checked} onChange={onToggle} onClick={e=>e.stopPropagation()} style={{marginTop:2,accentColor:C.sage,flexShrink:0,width:14,height:14}}/>
+        <span style={{fontSize:11,color:checked?C.sage:C.ink,textDecoration:checked?"line-through":"none",lineHeight:1.5,fontFamily:"'Lora',serif",flex:1}}>{item.texto}</span>
+        {item.obs&&<button onClick={e=>{e.stopPropagation();setShowObs(v=>!v);}} style={{background:showObs?C.paperDeep:"none",border:`1px solid ${C.tape}`,borderRadius:"50%",width:16,height:16,fontSize:9,cursor:"pointer",color:showObs?C.ink:C.ghost,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Space Mono',monospace",fontWeight:700}}>ℹ</button>}
+      </div>
+      {item.obs&&showObs&&(
+        <div style={{padding:"6px 10px 8px 34px",fontSize:10,color:C.faded,fontStyle:"italic",fontFamily:"'Lora',serif",lineHeight:1.6,borderTop:`1px dashed ${C.tape}`}}>
+          {item.obs}
+        </div>
+      )}
+    </div>
+  );
+}
 function ChecklistHabilitacao({etapa,onSalvar,onClose}){
   const historico=etapa.checklistHistorico||[];
   const atual=etapa.checklist||{empresa:"",itens:{},resultado:"",motivo:""};
@@ -1318,15 +1334,7 @@ function ChecklistHabilitacao({etapa,onSalvar,onClose}){
               <div key={secao.id} style={{marginBottom:18}}>
                 <div className="mono" style={{fontSize:9,fontWeight:700,color:C.terra,letterSpacing:".1em",marginBottom:8,paddingBottom:4,borderBottom:`1px solid ${C.tape}`}}>{secao.label.toUpperCase()}</div>
                 <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                  {secao.itens.map(item=>{
-                    const checked=!!itens[item.id];
-                    return(
-                      <label key={item.id} style={{display:"flex",gap:10,alignItems:"flex-start",cursor:"pointer",padding:"6px 8px",borderRadius:2,background:checked?`${C.sage}15`:C.paperDark,border:`1px solid ${checked?C.sage:C.tape}`,transition:"all .15s"}}>
-                        <input type="checkbox" checked={checked} onChange={()=>toggleItem(item.id)} style={{marginTop:2,accentColor:C.sage,flexShrink:0,width:14,height:14}}/>
-                        <span style={{fontSize:11,color:checked?C.sage:C.ink,textDecoration:checked?"line-through":"none",lineHeight:1.5,fontFamily:"'Lora',serif"}}>{item.texto}</span>
-                      </label>
-                    );
-                  })}
+                  {secao.itens.map(item=><ChecklistItem key={item.id} item={item} checked={!!itens[item.id]} onToggle={()=>toggleItem(item.id)}/>)}
                 </div>
               </div>
             ))}
