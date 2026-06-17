@@ -1214,13 +1214,13 @@ const CHECKLIST_HABILITACAO = [
   {
     id:"fiscal",label:"2. Habilitação Fiscal, Social e Trabalhista",
     itens:[
-      {id:"f1",texto:"CNPJ e QSA — autenticidade verificada na Receita Federal"},
-      {id:"f2",texto:"CND Federal (PGFN + RFB) — validade máx. 90 dias antes da abertura"},
-      {id:"f3",texto:"CRF — Certificado de Regularidade do FGTS"},
-      {id:"f4",texto:"CNDT — Certidão Negativa de Débitos Trabalhistas (TST)"},
+      {id:"f1",texto:<span>CNPJ e QSA — autenticidade verificada na <a href="https://solucoes.receita.fazenda.gov.br/Servicos/cnpjreva/qsa" target="_blank" rel="noreferrer" style={{color:C.sage}}>Receita Federal</a></span>},
+      {id:"f2",texto:<span>CND Federal (PGFN + RFB) — validade máx. 90 dias — <a href="https://servicos.receitafederal.gov.br/servico/certidoes" target="_blank" rel="noreferrer" style={{color:C.sage}}>verificar autenticidade</a></span>},
+      {id:"f3",texto:<span>CRF — Certificado de Regularidade do FGTS — <a href="https://consulta-crf.caixa.gov.br/consultacrf/pages/consultaEmpregador.jsf" target="_blank" rel="noreferrer" style={{color:C.sage}}>verificar autenticidade</a></span>},
+      {id:"f4",texto:<span>CNDT — Certidão Negativa de Débitos Trabalhistas — <a href="https://cndt-certidao.tst.jus.br/inicio.faces" target="_blank" rel="noreferrer" style={{color:C.sage}}>verificar autenticidade</a></span>},
       {id:"f5",texto:"Inscrição no cadastro de contribuintes Municipal"},
       {id:"f6",texto:"CND Municipal do domicílio/sede"},
-      {id:"f7",texto:"CND Estadual (se apresentada, autenticidade obrigatória)"},
+      {id:"f7",texto:<span>CND Estadual PA (se apresentada, autenticidade obrigatória) — <a href="https://app.sefa.pa.gov.br/autenticidade-certidoes/consultaCertidao.do" target="_blank" rel="noreferrer" style={{color:C.sage}}>verificar autenticidade</a></span>},
       {id:"f8",texto:"Certidão negativa de falência — emitida em até 90 dias antes da abertura"},
     ]
   },
