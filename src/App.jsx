@@ -1214,7 +1214,7 @@ function AbaEtapas({processo,onUpdate,readonly}){
     const autoData=ch.status==="concluída"&&!etapa?.dataEntrega?{dataEntrega:new Date().toISOString().split("T")[0]}:{};
     const novasEtapas=processo.etapas.map(e=>e.id===id?{...e,...ch,...autoData}:e);
     const desc=ch.status?`Etapa "${etapa?.nome}" marcada como ${ch.status.toUpperCase()}`:ch.nome?`Etapa renomeada para "${ch.nome}"`:null;
-    onUpdate({etapas:novasEtapas,...(desc?{_historico:desc}:{})});
+    onUpdate({etapas:novasEtapas});
   }
   function del(id){ if(readonly) return; onUpdate({etapas:processo.etapas.filter(e=>e.id!==id)}); }
   function add(){ if(!addNome.trim()||readonly) return; onUpdate({etapas:[...processo.etapas,{id:mkId(),nome:addNome.trim(),status:"pendente",prazo:"",dataEntrega:"",nota:""}]}); setAddNome(""); setShowAdd(false); }
