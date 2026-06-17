@@ -1197,13 +1197,222 @@ function PopoverDicaEtapa({etapa,onClose}){
     </div>
   );
 }
+// ─── Checklist Habilitação ────────────────────────────────────────────────────
+const CHECKLIST_HABILITACAO = [
+  {
+    id:"juridica",label:"1. Habilitação Jurídica",
+    itens:[
+      {id:"j1",texto:"RG ou doc. equivalente dos sócios/proprietários"},
+      {id:"j2",texto:"Empresário individual: inscrição no RPEM da Junta Comercial"},
+      {id:"j3",texto:"MEI: CCMEI — autenticidade verificada em gov.br/empreendedor"},
+      {id:"j4",texto:"Soc. empresária/SLU/EIRELI: ato constitutivo + doc. dos administradores"},
+      {id:"j5",texto:"Sociedade simples: inscrição no Registro Civil de PJ + doc. administradores"},
+      {id:"j6",texto:"Filial/sucursal: inscrição onde opera + averbação na sede"},
+      {id:"j7",texto:"Todos os docs acompanhados de alterações ou consolidação respectiva"},
+    ]
+  },
+  {
+    id:"fiscal",label:"2. Habilitação Fiscal, Social e Trabalhista",
+    itens:[
+      {id:"f1",texto:"CNPJ e QSA — autenticidade verificada na Receita Federal"},
+      {id:"f2",texto:"CND Federal (PGFN + RFB) — validade máx. 90 dias antes da abertura"},
+      {id:"f3",texto:"CRF — Certificado de Regularidade do FGTS"},
+      {id:"f4",texto:"CNDT — Certidão Negativa de Débitos Trabalhistas (TST)"},
+      {id:"f5",texto:"Inscrição no cadastro de contribuintes Municipal"},
+      {id:"f6",texto:"CND Municipal do domicílio/sede"},
+      {id:"f7",texto:"CND Estadual (se apresentada, autenticidade obrigatória)"},
+      {id:"f8",texto:"Certidão negativa de falência — emitida em até 90 dias antes da abertura"},
+    ]
+  },
+  {
+    id:"economica",label:"3. Qualificação Econômico-Financeira",
+    itens:[
+      {id:"e1",texto:"Balanço Patrimonial e DRE (ECD/SPED) — assinados por contador + empresário"},
+      {id:"e2",texto:"Nota Explicativa do balanço"},
+      {id:"e3",texto:"Termo de abertura e encerramento do Livro Diário + registro na Junta"},
+      {id:"e4",texto:"DMPL ou DLPA"},
+      {id:"e5",texto:"CHP — Certidão de Habilitação Profissional do contador (validade 90 dias)"},
+      {id:"e6",texto:"Declaração de Capacidade Financeira (Anexo III) — LG ≥ 1,00 | LC ≥ 1,00 | SG ≥ 1,00"},
+      {id:"e7",texto:"Declaração de Compromissos Assumidos (Anexo XII) — ICF ≤ 1,50"},
+    ]
+  },
+  {
+    id:"declaracoes",label:"4. Declarações e Anexos Obrigatórios",
+    itens:[
+      {id:"d1",texto:"Anexo I — Proibição trabalho infantil/noturno/perigoso (art. 7º, XXXIII, CF)"},
+      {id:"d2",texto:"Anexo II — Reserva de cargos para PcD e reabilitados (art. 63, IV)"},
+      {id:"d3",texto:"Anexo III — Declaração de Capacidade Financeira (índices preenchidos)"},
+      {id:"d4",texto:"Anexo IV — Enquadramento ME/EPP (se aplicável)"},
+      {id:"d5",texto:"Anexo V — Instalações, aparelhamento e pessoal técnico (art. 67, III)"},
+      {id:"d6",texto:"Anexo VI — Custos trabalhistas na proposta (art. 63, §1º)"},
+      {id:"d7",texto:"Anexo VII — Conhecimento das condições locais (ou declaração RT se sem vistoria)"},
+      {id:"d8",texto:"Anexo VIII — Atendimento aos requisitos de habilitação e veracidade dos docs"},
+      {id:"d9",texto:"Anexo IX — Conhecimento pleno das condições (assinada pelo RT)"},
+      {id:"d10",texto:"Anexo X — Ausência de vínculo com servidor/agente político do órgão"},
+      {id:"d11",texto:"Anexo XI — Relação de compromissos que impliquem diminuição de pessoal técnico"},
+      {id:"d12",texto:"Anexo XII — Declaração de Compromissos Assumidos com ICF demonstrado"},
+    ]
+  },
+  {
+    id:"garantia",label:"5. Garantia da Proposta",
+    itens:[
+      {id:"g1",texto:"Comprovante de Garantia da Proposta — 1% do valor estimado do(s) lote(s)"},
+      {id:"g2",texto:"Modalidade: caução em dinheiro / seguro-garantia / fiança bancária"},
+    ]
+  },
+];
 
+function ChecklistHabilitacao({etapa,onSalvar,onClose}){
+  const historico=etapa.checklistHistorico||[];
+  const atual=etapa.checklist||{empresa:"",itens:{},resultado:"",motivo:""};
+  const [empresa,setEmpresa]=useState(atual.empresa||"");
+  const [itens,setItens]=useState(atual.itens||{});
+  const [resultado,setResultado]=useState(atual.resultado||"");
+  const [motivo,setMotivo]=useState(atual.motivo||"");
+  const [aba,setAba]=useState("checklist");
+  const [showConfirm,setShowConfirm]=useState(false);
+  const totalItens=CHECKLIST_HABILITACAO.reduce((acc,s)=>acc+s.itens.length,0);
+  const marcados=Object.values(itens).filter(Boolean).length;
+  const pctCheck=totalItens?Math.round((marcados/totalItens)*100):0;
+  function toggleItem(id){ setItens(prev=>({...prev,[id]:!prev[id]})); }
+  function salvarAtual(){
+    onSalvar({checklist:{empresa,itens,resultado,motivo},checklistHistorico:etapa.checklistHistorico||[]});
+    onClose();
+  }
+  function novaEmpresa(){
+    const rodada={empresa,itens,resultado,motivo,data:new Date().toISOString()};
+    const novoHist=[...historico,rodada];
+    onSalvar({checklist:{empresa:"",itens:{},resultado:"",motivo:""},checklistHistorico:novoHist});
+    setEmpresa("");setItens({});setResultado("");setMotivo("");
+    setShowConfirm(false);setAba("checklist");
+  }
+  return(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-box fade-up" style={{maxWidth:600,maxHeight:"90vh",overflowY:"auto",position:"relative"}} onClick={e=>e.stopPropagation()}>
+        <div className="modal-header" style={{background:C.inkLight}}>
+          <div>
+            <div className="mono" style={{fontSize:8,color:C.ghost,letterSpacing:".1em",marginBottom:2}}>CHECKLIST // HABILITAÇÃO</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:C.paper}}>Análise de Habilitação</div>
+          </div>
+          <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:C.ghost,fontSize:16}}>✕</button>
+        </div>
+        <div style={{padding:"12px 18px",borderBottom:`1px solid ${C.tape}`,background:C.paperDark}}>
+          <label className="lbl">EMPRESA ANALISADA</label>
+          <input value={empresa} onChange={e=>setEmpresa(e.target.value)} className="field" placeholder="Nome ou CNPJ da empresa..."/>
+        </div>
+        <div style={{padding:"8px 18px",background:C.paperDark,borderBottom:`1px solid ${C.tape}`}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+            <span className="mono" style={{fontSize:9,color:C.faded}}>{marcados}/{totalItens} ITENS VERIFICADOS</span>
+            <span className="mono" style={{fontSize:9,color:pctCheck===100?C.sage:C.faded}}>{pctCheck}%</span>
+          </div>
+          <ProgressBar p={pctCheck} color={pctCheck===100?C.sage:C.terra} height={4}/>
+        </div>
+        <div className="tab-row">
+          <button className={`tab-item${aba==="checklist"?" active":""}`} onClick={()=>setAba("checklist")}>📋 CHECKLIST</button>
+          <button className={`tab-item${aba==="resultado"?" active":""}`} onClick={()=>setAba("resultado")}>{resultado==="aprovada"?"✅":resultado==="reprovada"?"❌":"⚖️"} RESULTADO</button>
+          {historico.length>0&&<button className={`tab-item${aba==="historico"?" active":""}`} onClick={()=>setAba("historico")}>🕓 HISTÓRICO ({historico.length})</button>}
+        </div>
+        {aba==="checklist"&&(
+          <div style={{padding:"14px 18px"}}>
+            {CHECKLIST_HABILITACAO.map(secao=>(
+              <div key={secao.id} style={{marginBottom:18}}>
+                <div className="mono" style={{fontSize:9,fontWeight:700,color:C.terra,letterSpacing:".1em",marginBottom:8,paddingBottom:4,borderBottom:`1px solid ${C.tape}`}}>{secao.label.toUpperCase()}</div>
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  {secao.itens.map(item=>{
+                    const checked=!!itens[item.id];
+                    return(
+                      <label key={item.id} style={{display:"flex",gap:10,alignItems:"flex-start",cursor:"pointer",padding:"6px 8px",borderRadius:2,background:checked?`${C.sage}15`:C.paperDark,border:`1px solid ${checked?C.sage:C.tape}`,transition:"all .15s"}}>
+                        <input type="checkbox" checked={checked} onChange={()=>toggleItem(item.id)} style={{marginTop:2,accentColor:C.sage,flexShrink:0,width:14,height:14}}/>
+                        <span style={{fontSize:11,color:checked?C.sage:C.ink,textDecoration:checked?"line-through":"none",lineHeight:1.5,fontFamily:"'Lora',serif"}}>{item.texto}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {aba==="resultado"&&(
+          <div style={{padding:"18px"}}>
+            <div className="mono" style={{fontSize:9,fontWeight:700,color:C.faded,letterSpacing:".1em",marginBottom:14}}>// RESULTADO DA ANÁLISE</div>
+            <div style={{display:"flex",gap:10,marginBottom:18}}>
+              {[{v:"aprovada",label:"✅ APROVADA",bg:"#deebd8",border:"#7aaa6a",color:C.sage},{v:"reprovada",label:"❌ REPROVADA",bg:"#f0dcd8",border:"#c07060",color:C.rust}].map(op=>(
+                <button key={op.v} onClick={()=>setResultado(op.v)} className="mono"
+                  style={{flex:1,padding:"14px",border:`2px solid ${resultado===op.v?op.border:C.tape}`,borderRadius:3,background:resultado===op.v?op.bg:C.paperDark,color:resultado===op.v?op.color:C.ghost,fontWeight:700,fontSize:11,cursor:"pointer",transition:"all .2s"}}>
+                  {op.label}
+                </button>
+              ))}
+            </div>
+            {resultado==="reprovada"&&(
+              <div>
+                <label className="lbl">MOTIVO DA REPROVAÇÃO</label>
+                <textarea value={motivo} onChange={e=>setMotivo(e.target.value)} className="field" rows={4} style={{resize:"vertical"}} placeholder="Qual documento estava irregular, qual certidão estava vencida, qual índice não atingiu o mínimo exigido..."/>
+              </div>
+            )}
+            {resultado==="aprovada"&&(
+              <div style={{background:"#deebd8",border:`1px solid #7aaa6a`,borderLeft:`3px solid ${C.sage}`,borderRadius:2,padding:"12px 14px"}}>
+                <div className="mono" style={{fontSize:9,fontWeight:700,color:C.sage,marginBottom:4}}>✅ EMPRESA HABILITADA</div>
+                <div style={{fontSize:11,color:C.sage,fontFamily:"'Lora',serif"}}>A empresa {empresa||"analisada"} atendeu a todos os requisitos. O processo pode prosseguir para a fase de contratação.</div>
+              </div>
+            )}
+          </div>
+        )}
+        {aba==="historico"&&(
+          <div style={{padding:"14px 18px"}}>
+            <div className="mono" style={{fontSize:9,fontWeight:700,color:C.faded,letterSpacing:".1em",marginBottom:12}}>// EMPRESAS ANALISADAS ANTERIORMENTE</div>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {[...historico].reverse().map((h,i)=>{
+                const totalH=CHECKLIST_HABILITACAO.reduce((acc,s)=>acc+s.itens.length,0);
+                const marcH=Object.values(h.itens||{}).filter(Boolean).length;
+                return(
+                  <div key={i} style={{background:C.paperDark,border:`1px solid ${h.resultado==="aprovada"?C.sage:h.resultado==="reprovada"?C.rust:C.tape}`,borderLeft:`3px solid ${h.resultado==="aprovada"?C.sage:h.resultado==="reprovada"?C.rust:C.tape}`,borderRadius:2,padding:"10px 14px"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                      <div>
+                        <div style={{fontSize:12,fontWeight:700,color:C.ink,fontFamily:"'Playfair Display',serif"}}>{h.empresa||"Empresa não identificada"}</div>
+                        <div className="mono" style={{fontSize:8,color:C.ghost,marginTop:2}}>{h.data?new Date(h.data).toLocaleDateString("pt-BR"):""}</div>
+                      </div>
+                      <span className="mono" style={{fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:1,background:h.resultado==="aprovada"?"#deebd8":h.resultado==="reprovada"?"#f0dcd8":"#ede4d0",color:h.resultado==="aprovada"?C.sage:h.resultado==="reprovada"?C.rust:C.ghost,border:`1px solid ${h.resultado==="aprovada"?"#7aaa6a":h.resultado==="reprovada"?"#c07060":C.tape}`}}>
+                        {h.resultado==="aprovada"?"✅ APROVADA":h.resultado==="reprovada"?"❌ REPROVADA":"SEM RESULTADO"}
+                      </span>
+                    </div>
+                    <ProgressBar p={totalH?Math.round((marcH/totalH)*100):0} color={h.resultado==="aprovada"?C.sage:C.rust} height={3}/>
+                    <div className="mono" style={{fontSize:8,color:C.ghost,marginTop:2}}>{marcH}/{totalH} itens verificados</div>
+                    {h.motivo&&<div style={{fontSize:11,color:C.rust,fontStyle:"italic",fontFamily:"'Lora',serif",background:"#fdf5f3",border:`1px solid ${C.rust}33`,borderRadius:2,padding:"6px 8px",marginTop:6}}>❌ {h.motivo}</div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        <div style={{padding:"12px 18px",borderTop:`1px solid ${C.tape}`,display:"flex",gap:8,justifyContent:"space-between",background:C.paperDark}}>
+          <button className="btn-ghost" onClick={()=>setShowConfirm(true)} style={{fontSize:9}}>🔄 NOVA EMPRESA</button>
+          <div style={{display:"flex",gap:8}}>
+            <button className="btn-ghost" onClick={onClose}>CANCELAR</button>
+            <button className="btn-primary" onClick={salvarAtual}>SALVAR</button>
+          </div>
+        </div>
+        {showConfirm&&(
+          <div style={{position:"absolute",inset:0,background:"rgba(10,8,2,.8)",display:"flex",alignItems:"center",justifyContent:"center",borderRadius:2}}>
+            <div style={{background:C.paper,border:`1px solid ${C.tape}`,borderRadius:2,padding:24,maxWidth:320,textAlign:"center",boxShadow:`4px 4px 0 ${C.tape}`}}>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:C.ink,marginBottom:8}}>Confirmar nova empresa?</div>
+              <div style={{fontSize:11,color:C.faded,fontFamily:"'Lora',serif",marginBottom:16,lineHeight:1.6}}>A análise de <strong>{empresa||"empresa não identificada"}</strong> será salva no histórico e o checklist será limpo.</div>
+              <div style={{display:"flex",gap:8,justifyContent:"center"}}>
+                <button className="btn-ghost" onClick={()=>setShowConfirm(false)}>CANCELAR</button>
+                <button className="btn-primary" onClick={novaEmpresa}>CONFIRMAR</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 // ─── Aba Etapas ───────────────────────────────────────────────────────────────
 function AbaEtapas({processo,onUpdate,readonly}){
   const [editId,setEditId]=useState(null); const [notaTemp,setNotaTemp]=useState("");
   const [addNome,setAddNome]=useState(""); const [showAdd,setShowAdd]=useState(false);
   const [dragIdx,setDragIdx]=useState(null); const [overIdx,setOverIdx]=useState(null);
-  const [dicaEtapa,setDicaEtapa]=useState(null);
+  const [dicaEtapa,setDicaEtapa]=useState(null); const [checklistEtapa,setChecklistEtapa]=useState(null);
   const [editNomeId,setEditNomeId]=useState(null);
   const [nomeTemp,setNomeTemp]=useState("");
   const dFrom=useRef(null); const touchIdx=useRef(null);
@@ -1251,6 +1460,7 @@ const vencido = e.prazo && !e.dataEntrega && new Date(e.prazo+"T12:00:00") < new
                     {e.nome}
                   </span>
                 )}
+                {e.nome.toLowerCase().includes("habilitação")&&<button onClick={()=>setChecklistEtapa(e)} style={{background:"#deebd8",border:`1px solid #7aaa6a`,borderRadius:2,padding:"1px 7px",fontSize:9,cursor:"pointer",color:C.sage,fontFamily:"'Space Mono',monospace",fontWeight:700,flexShrink:0}}>📋</button>}
                 {DICAS_ETAPAS[e.nome]&&(
                   <button onClick={()=>setDicaEtapa(e)}
                     style={{background:"#f5ead0",border:`1px solid ${C.ochreLight}`,borderRadius:"50%",width:16,height:16,
@@ -1283,6 +1493,7 @@ const vencido = e.prazo && !e.dataEntrega && new Date(e.prazo+"T12:00:00") < new
         );
       })}
       {dicaEtapa&&<PopoverDicaEtapa etapa={dicaEtapa} onClose={()=>setDicaEtapa(null)}/>}
+      {checklistEtapa&&<ChecklistHabilitacao etapa={checklistEtapa} onSalvar={(ch)=>{up(checklistEtapa.id,ch);setChecklistEtapa({...checklistEtapa,...ch});}} onClose={()=>setChecklistEtapa(null)}/>}
       {!readonly&&(
         <div style={{padding:"10px 14px",borderTop:`1px dashed ${C.tape}`,background:C.paperDark}}>
           {showAdd?(
